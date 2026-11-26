@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/gerar-jogos.ts public/dados && node scripts/backtest.ts public/dados/historico.json public/dados/backtest.json && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "vite build && vite preview",
