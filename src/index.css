@@ -67,3 +67,26 @@ footer { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; font-size: 12
   .contagem { background: #263b2e; color: #c3d7c8; }
   .gols-esperados, .elo-times { border-top-color: #2a3b30; }
 }
+
+.desempenho { margin: 18px 0 22px; padding: 16px; background: var(--cartao); border: 1px solid var(--linha); border-radius: 14px; }
+.desempenho-titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.desempenho-titulo h2 { margin: 3px 0 12px; }
+.sobrelinha { color: var(--suave); font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+.amostra { color: var(--suave); font-size: 11px; }
+.metricas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.metricas-grid div { display: flex; flex-direction: column; gap: 3px; padding: 10px 8px; background: var(--fundo); border-radius: 9px; min-width: 0; }
+.metricas-grid strong { color: var(--campo); font: 700 22px 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
+.metricas-grid span { color: var(--suave); font-size: 10px; line-height: 1.2; }
+.desempenho h3 { margin: 17px 0 10px; font-size: 13px; }
+.desempenho-lista { display: grid; gap: 10px; }
+.desempenho-linha { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(70px, 1.5fr) 38px; align-items: center; gap: 9px; font-size: 12px; }
+.desempenho-linha > span { min-width: 0; font-weight: 600; }
+.desempenho-linha small { display: block; color: var(--suave); font-size: 10px; font-weight: 400; }
+.desempenho-linha > strong { text-align: right; font-variant-numeric: tabular-nums; }
+.desempenho-trilho { height: 7px; background: var(--linha); border-radius: 99px; overflow: hidden; }
+.desempenho-trilho i { display: block; height: 100%; background: var(--casa); border-radius: inherit; }
+.nota-desempenho { margin: 14px 0 0; color: var(--suave); font-size: 10px; line-height: 1.45; }
+@media (max-width: 480px) {
+  .metricas-grid { grid-template-columns: repeat(2, 1fr); }
+  .desempenho { padding: 12px; }
+}
