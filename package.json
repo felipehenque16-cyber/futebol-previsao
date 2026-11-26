@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "vite build && vite preview",
-    "jogos": "node scripts/gerar-jogos.ts public/dados"
+    "jogos": "node scripts/gerar-jogos.ts public/dados",
+    "backtest": "node scripts/backtest.ts public/dados/historico.json public/dados/backtest.json"
   },
   "dependencies": {
     "react": "^19.2.8",
