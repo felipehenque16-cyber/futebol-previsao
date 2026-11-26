@@ -11,6 +11,22 @@ const fmtAtualizacao = new Intl.DateTimeFormat('pt-BR', {
 })
 const MARGEM_FAVORITO = 0.06
 type Lado = 'casa' | 'empate' | 'fora'
+interface MetricasBacktest {
+  partidasTestadas: number
+  acuracia: number
+  acuraciaBaseline: number
+  brierScore: number
+  logLoss: number
+  acertos: number
+  acertosBaseline: number
+}
+interface RelatorioBacktest {
+  geradoEm: string
+  partidasNoHistorico: number
+  metricas: MetricasBacktest
+  porCompeticao: Record<string, MetricasBacktest>
+  observacao: string
+}
 
 function percentuais(jogo: Jogo) {
   const previsao = jogo.previsao!
@@ -89,6 +105,14 @@ export default function App() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState<'proximos' | 'resultados'>('proximos')
   const [campeonato, setCampeonato] = useState('todos')
+  const [backtest, setBacktest] = useState<RelatorioBacktest | null>(null)
+
+  useEffect(() => {
+    fetch('./dados/backtest.json')
+      .then((resposta) => resposta.ok ? resposta.json() as Promise<RelatorioBacktest> : null)
+      .then((relatorio) => { if (relatorio?.metricas) setBacktest(relatorio) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetch('./dados/jogos.json')
@@ -139,6 +163,31 @@ export default function App() {
             {campeonatos.map(([codigo, nome]) => <option key={codigo} value={codigo}>{nome}</option>)}
           </select>
         </div>
+        {backtest && (
+          <section className="desempenho" aria-label="Desempenho histórico do modelo">
+            <div className="desempenho-titulo">
+              <div><span className="sobrelinha">VALIDAÇÃO DO MODELO</span><h2>Como estamos indo?</h2></div>
+              <span className="amostra">{backtest.metricas.partidasTestadas} jogos avaliados</span>
+            </div>
+            <div className="metricas-grid">
+              <div><strong>{(backtest.metricas.acuracia * 100).toFixed(1)}%</strong><span>acerto do modelo</span></div>
+              <div><strong>{(backtest.metricas.acuraciaBaseline * 100).toFixed(1)}%</strong><span>referência simples</span></div>
+              <div><strong>{backtest.metricas.brierScore.toFixed(3)}</strong><span>Brier Score · menor é melhor</span></div>
+              <div><strong>{backtest.metricas.logLoss.toFixed(3)}</strong><span>Log Loss · menor é melhor</span></div>
+            </div>
+            <h3>Precisão por campeonato</h3>
+            <div className="desempenho-lista">
+              {Object.entries(backtest.porCompeticao).sort((a, b) => b[1].partidasTestadas - a[1].partidasTestadas).map(([nome, m]) => (
+                <div className="desempenho-linha" key={nome}>
+                  <span>{nome}<small>{m.partidasTestadas} jogos</small></span>
+                  <div className="desempenho-trilho"><i style={{ width: `${Math.round(m.acuracia * 100)}%` }} /></div>
+                  <strong>{(m.acuracia * 100).toFixed(0)}%</strong>
+                </div>
+              ))}
+            </div>
+            <p className="nota-desempenho">{backtest.observacao}</p>
+          </section>
+        )}
         {carregando && <p className="aviso">Carregando partidas e previsões…</p>}
         {erro && <p className="aviso">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
         {!carregando && !erro && grupos.length === 0 && <p className="aviso">Nenhuma partida encontrada para este filtro.</p>}
