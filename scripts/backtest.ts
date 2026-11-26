@@ -46,9 +46,9 @@ const jogos = arquivo.jogos
   .filter((p) => Number.isFinite(p.data) && Number.isFinite(p.golsMandante) &&
     Number.isFinite(p.golsVisitante) && p.golsMandante >= 0 && p.golsVisitante >= 0)
   .sort((a, b) => a.data - b.data)
-const historico: Partida[] = []
+const historicoPorCompeticao = new Map<string, Partida[]>()
 const avaliacoes: Avaliacao[] = []
-const contarResultados = () => {
+const contarResultados = (historico: Partida[]) => {
   const contagem = { casa: 0, empate: 0, fora: 0 }
   for (const p of historico) {
     if (p.golsMandante > p.golsVisitante) contagem.casa++
@@ -59,6 +59,7 @@ const contarResultados = () => {
 }
 for (const jogo of jogos) {
   // prever() também aplica o corte estrito p.data < data do jogo, protegendo contra vazamento temporal.
+  const historico = historicoPorCompeticao.get(jogo.codigo) ?? []
   const previsao = prever(historico, jogo.mandante, jogo.visitante, jogo.data)
   if (previsao) {
     const probabilidades = { casa: previsao.casa, empate: previsao.empate, fora: previsao.fora }
@@ -72,7 +73,7 @@ for (const jogo of jogos) {
       (probabilidades.empate - alvo.empate) ** 2 +
       (probabilidades.fora - alvo.fora) ** 2) / 3
     const probReal = Math.max(1e-15, probabilidades[resultadoReal])
-    const contagem = contarResultados()
+    const contagem = contarResultados(historico)
     const baseline = (Object.entries(contagem) as [Resultado, number][]).sort((a, b) => b[1] - a[1])[0][0]
     avaliacoes.push({
       id: jogo.id,
@@ -100,6 +101,7 @@ for (const jogo of jogos) {
     golsMandante: jogo.golsMandante,
     golsVisitante: jogo.golsVisitante,
   })
+  historicoPorCompeticao.set(jogo.codigo, historico)
 }
 function resumir(lista: Avaliacao[]): Metricas {
   const n = lista.length
@@ -139,11 +141,11 @@ const relatorio = {
   fonte: entrada,
   partidasNoHistorico: jogos.length,
   partidasTestadas: avaliacoes.length,
-  criterio: 'walk-forward cronológico; cada previsão usa somente partidas com data anterior à partida avaliada',
+  criterio: 'walk-forward cronológico e separado por competição; cada previsão usa somente partidas anteriores da mesma competição',
   metricas: resumir(avaliacoes),
   porCompeticao,
   calibracaoPorConfianca: confianca,
-  observacao: 'Acurácia mede o resultado mais provável; Brier Score e Log Loss avaliam a qualidade das probabilidades. A baseline escolhe o resultado mais frequente entre os jogos anteriores disponíveis. Amostras pequenas não devem ser interpretadas como garantia de desempenho futuro.',
+  observacao: 'Acurácia mede o resultado mais provável; Brier Score e Log Loss avaliam a qualidade das probabilidades. A baseline escolhe o resultado mais frequente entre os jogos anteriores da mesma competição. Amostras pequenas não devem ser interpretadas como garantia de desempenho futuro.',
   partidas: avaliacoes,
 }
 await mkdir(dirname(saida), { recursive: true })
