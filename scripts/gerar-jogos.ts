@@ -65,7 +65,9 @@ const situacao = (status: string) =>
       : status === 'SCHEDULED' || status === 'TIMED' ? 'agendado' : 'outro'
 
 const agora = Date.now()
-const jogos: unknown[] = []
+const jogos: any[] = []
+const idsIncluidos = new Set<number>()
+const historicoPorCodigo = new Map<string, Partida[]>()
 const historicoCompleto: JogoHistorico[] = []
 for (const [codigo, titulo] of COMPETICOES) {
   try {
@@ -80,27 +82,24 @@ for (const [codigo, titulo] of COMPETICOES) {
         golsVisitante: p.score.fullTime.away!,
       }))
       .filter((p) => Number.isFinite(p.data))
+    historicoPorCodigo.set(codigo, historico)
 
     for (const partida of todas) {
       const quando = Date.parse(partida.utcDate)
       const estado = situacao(partida.status)
       if (!Number.isFinite(quando) || estado === 'outro' || quando < agora - JANELA_ANTES_MS || quando > agora + JANELA_DEPOIS_MS) continue
       if (!partida.homeTeam.id || !partida.awayTeam.id) continue
-
       const golsCasa = partida.score.fullTime.home
       const golsFora = partida.score.fullTime.away
       const placar = golsCasa !== null && golsFora !== null ? { casa: golsCasa, fora: golsFora } : null
       jogos.push({
-        id: partida.id,
-        codigo,
-        competicao: titulo,
-        data: partida.utcDate,
-        situacao: estado,
+        id: partida.id, codigo, competicao: titulo, data: partida.utcDate, situacao: estado,
         mandante: { nome: nome(partida.homeTeam), escudo: partida.homeTeam.crest },
         visitante: { nome: nome(partida.awayTeam), escudo: partida.awayTeam.crest },
         placar,
         previsao: prever(historico, partida.homeTeam.id, partida.awayTeam.id, quando),
       })
+      idsIncluidos.add(partida.id)
     }
     for (const p of todas) {
       const golsCasa = p.score.fullTime.home
@@ -109,16 +108,10 @@ for (const [codigo, titulo] of COMPETICOES) {
       if (p.status !== 'FINISHED' || golsCasa === null || golsFora === null ||
         !Number.isFinite(data) || !p.homeTeam.id || !p.awayTeam.id) continue
       historicoCompleto.push({
-        id: p.id,
-        codigo,
-        competicao: titulo,
-        data,
-        mandante: p.homeTeam.id,
-        visitante: p.awayTeam.id,
-        golsMandante: golsCasa,
-        golsVisitante: golsFora,
-        mandanteNome: nome(p.homeTeam),
-        visitanteNome: nome(p.awayTeam),
+        id: p.id, codigo, competicao: titulo, data,
+        mandante: p.homeTeam.id, visitante: p.awayTeam.id,
+        golsMandante: golsCasa, golsVisitante: golsFora,
+        mandanteNome: nome(p.homeTeam), visitanteNome: nome(p.awayTeam),
       })
     }
     console.log(`${codigo}: ${historico.length} jogos históricos válidos; ${todas.length} partidas recebidas`)
@@ -126,6 +119,51 @@ for (const [codigo, titulo] of COMPETICOES) {
     console.warn(`${codigo}: ignorada (${erro instanceof Error ? erro.message : erro})`)
   }
   await dormir(7_000)
+}
+
+// Complementa as ligas configuradas com o calendário global liberado pelo plano da API.
+// A consulta global evita deixar de fora torneios continentais e outras competições do dia.
+const dataLocal = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+}).format(new Date())
+const deslocarDia = (data: string, dias: number) => {
+  const d = new Date(`${data}T12:00:00-03:00`)
+  d.setDate(d.getDate() + dias)
+  return d.toISOString().slice(0, 10)
+}
+try {
+  const inicio = deslocarDia(dataLocal, -1)
+  const fim = deslocarDia(dataLocal, 8)
+  const resposta = await fetch(`https://api.football-data.org/v4/matches?dateFrom=${inicio}&dateTo=${fim}`, {
+    headers: { 'X-Auth-Token': TOKEN },
+  })
+  if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`)
+  const json = await resposta.json() as { matches?: (PartidaApi & { competition?: { code?: string; name?: string } })[] }
+  for (const partida of json.matches ?? []) {
+    if (idsIncluidos.has(partida.id)) continue
+    const quando = Date.parse(partida.utcDate)
+    const estado = situacao(partida.status)
+    if (!Number.isFinite(quando) || estado === 'outro' ||
+      quando < agora - JANELA_ANTES_MS || quando > agora + JANELA_DEPOIS_MS) continue
+    if (!partida.homeTeam.id || !partida.awayTeam.id) continue
+    const codigo = partida.competition?.code || 'OUT'
+    const golsCasa = partida.score.fullTime.home
+    const golsFora = partida.score.fullTime.away
+    const placar = golsCasa !== null && golsFora !== null ? { casa: golsCasa, fora: golsFora } : null
+    jogos.push({
+      id: partida.id, codigo,
+      competicao: partida.competition?.name || 'Outras competições',
+      data: partida.utcDate, situacao: estado,
+      mandante: { nome: nome(partida.homeTeam), escudo: partida.homeTeam.crest },
+      visitante: { nome: nome(partida.awayTeam), escudo: partida.awayTeam.crest },
+      placar,
+      previsao: prever(historicoPorCodigo.get(codigo) ?? [], partida.homeTeam.id, partida.awayTeam.id, quando),
+    })
+    idsIncluidos.add(partida.id)
+  }
+  console.log(`Calendário global: ${json.matches?.length ?? 0} partidas recebidas; ${jogos.length} partidas únicas na lista`)
+} catch (erro) {
+  console.warn(`Calendário global indisponível: ${erro instanceof Error ? erro.message : erro}`)
 }
 await mkdir(PASTA, { recursive: true })
 await writeFile(`${PASTA}/jogos.json`, JSON.stringify({
