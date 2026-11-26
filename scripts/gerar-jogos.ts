@@ -1,5 +1,4 @@
-// Busca jogos no football-data.org, calcula a previsão de cada um e grava
-// public/dados/jogos.json. Uso: FOOTBALL_DATA_TOKEN=... node scripts/gerar-jogos.ts [pasta]
+// Busca jogos no football-data.org, calcula previsões e grava public/dados/jogos.json.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { prever, type Partida } from './modelo.ts'
 
@@ -9,7 +8,6 @@ if (!TOKEN) {
   process.exit(1)
 }
 const PASTA = process.argv[2] ?? 'public/dados'
-
 const COMPETICOES: [string, string][] = [
   ['BSA', 'Brasileirão Série A'],
   ['CLI', 'Copa Libertadores'],
@@ -23,16 +21,10 @@ const COMPETICOES: [string, string][] = [
   ['DED', 'Eredivisie'],
   ['ELC', 'Championship'],
 ]
-
 const JANELA_ANTES_MS = 2 * 86_400_000
 const JANELA_DEPOIS_MS = 7 * 86_400_000
 
-interface TimeApi {
-  id: number
-  name: string
-  shortName: string | null
-  crest: string | null
-}
+interface TimeApi { id: number; name: string; shortName: string | null; crest: string | null }
 interface PartidaApi {
   id: number
   utcDate: string
@@ -41,32 +33,32 @@ interface PartidaApi {
   awayTeam: TimeApi
   score: { fullTime: { home: number | null; away: number | null } }
 }
-
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 async function buscar(codigo: string): Promise<PartidaApi[]> {
   for (let tentativa = 0; tentativa < 3; tentativa++) {
-    const r = await fetch(`https://api.football-data.org/v4/competitions/${codigo}/matches`, {
-      headers: { 'X-Auth-Token': TOKEN! },
+    const resposta = await fetch(`https://api.football-data.org/v4/competitions/${codigo}/matches`, {
+      headers: { 'X-Auth-Token': TOKEN },
     })
-    if (r.status === 429) {
+    if (resposta.status === 429) {
+      console.warn(`${codigo}: limite da API atingido; aguardando 61 segundos.`)
       await dormir(61_000)
       continue
     }
-    if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    const json = (await r.json()) as { matches: PartidaApi[] }
-    return json.matches
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`)
+    const json = (await resposta.json()) as { matches?: PartidaApi[] }
+    return Array.isArray(json.matches) ? json.matches : []
   }
-  throw new Error('limite de requisições excedido')
+  throw new Error('limite de requisições excedido após 3 tentativas')
 }
-
-const nome = (t: TimeApi) => t.shortName || t.name
-const situacao = (s: string) =>
-  s === 'FINISHED' ? 'encerrado' : s === 'IN_PLAY' || s === 'PAUSED' ? 'aoVivo' : s === 'SCHEDULED' || s === 'TIMED' ? 'agendado' : 'outro'
+const nome = (time: TimeApi) => time.shortName || time.name
+const situacao = (status: string) =>
+  status === 'FINISHED' ? 'encerrado'
+    : status === 'IN_PLAY' || status === 'PAUSED' ? 'aoVivo'
+      : status === 'SCHEDULED' || status === 'TIMED' ? 'agendado' : 'outro'
 
 const agora = Date.now()
 const jogos: unknown[] = []
-
 for (const [codigo, titulo] of COMPETICOES) {
   try {
     const todas = await buscar(codigo)
@@ -79,32 +71,39 @@ for (const [codigo, titulo] of COMPETICOES) {
         golsMandante: p.score.fullTime.home!,
         golsVisitante: p.score.fullTime.away!,
       }))
+      .filter((p) => Number.isFinite(p.data))
 
-    for (const p of todas) {
-      const quando = Date.parse(p.utcDate)
-      const estado = situacao(p.status)
-      if (estado === 'outro' || quando < agora - JANELA_ANTES_MS || quando > agora + JANELA_DEPOIS_MS) continue
-      if (!p.homeTeam.id || !p.awayTeam.id) continue
-      const placar = estado === 'agendado' ? null : { casa: p.score.fullTime.home ?? 0, fora: p.score.fullTime.away ?? 0 }
+    for (const partida of todas) {
+      const quando = Date.parse(partida.utcDate)
+      const estado = situacao(partida.status)
+      if (!Number.isFinite(quando) || estado === 'outro' || quando < agora - JANELA_ANTES_MS || quando > agora + JANELA_DEPOIS_MS) continue
+      if (!partida.homeTeam.id || !partida.awayTeam.id) continue
+
+      const golsCasa = partida.score.fullTime.home
+      const golsFora = partida.score.fullTime.away
+      // Não inventa placar 0–0 quando a API ainda não informou o resultado.
+      const placar = golsCasa !== null && golsFora !== null ? { casa: golsCasa, fora: golsFora } : null
       jogos.push({
-        id: p.id,
+        id: partida.id,
         codigo,
         competicao: titulo,
-        data: p.utcDate,
+        data: partida.utcDate,
         situacao: estado,
-        mandante: { nome: nome(p.homeTeam), escudo: p.homeTeam.crest },
-        visitante: { nome: nome(p.awayTeam), escudo: p.awayTeam.crest },
+        mandante: { nome: nome(partida.homeTeam), escudo: partida.homeTeam.crest },
+        visitante: { nome: nome(partida.awayTeam), escudo: partida.awayTeam.crest },
         placar,
-        previsao: prever(historico, p.homeTeam.id, p.awayTeam.id, quando),
+        previsao: prever(historico, partida.homeTeam.id, partida.awayTeam.id, quando),
       })
     }
-    console.log(`${codigo}: ${historico.length} jogos usados no modelo`)
-  } catch (e) {
-    console.warn(`${codigo}: ignorada (${e instanceof Error ? e.message : e})`)
+    console.log(`${codigo}: ${historico.length} jogos históricos válidos; ${todas.length} partidas recebidas`)
+  } catch (erro) {
+    console.warn(`${codigo}: ignorada (${erro instanceof Error ? erro.message : erro})`)
   }
-  await dormir(7_000) // plano grátis: 10 requisições por minuto
+  await dormir(7_000)
 }
-
 await mkdir(PASTA, { recursive: true })
-await writeFile(`${PASTA}/jogos.json`, JSON.stringify({ atualizadoEm: new Date().toISOString(), jogos }))
+await writeFile(`${PASTA}/jogos.json`, JSON.stringify({
+  atualizadoEm: new Date().toISOString(),
+  jogos: jogos.sort((a, b) => Date.parse((a as {data:string}).data) - Date.parse((b as {data:string}).data)),
+}))
 console.log(`${jogos.length} jogos gravados em ${PASTA}/jogos.json`)
