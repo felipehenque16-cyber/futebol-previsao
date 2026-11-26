@@ -61,7 +61,7 @@ async function buscar(codigo: string): Promise<PartidaApi[]> {
 const nome = (time: TimeApi) => time.shortName || time.name
 const situacao = (status: string) =>
   status === 'FINISHED' ? 'encerrado'
-    : status === 'IN_PLAY' || status === 'PAUSED' ? 'aoVivo'
+    : status === 'IN_PLAY' || status === 'LIVE' || status === 'PAUSED' ? 'aoVivo'
       : status === 'SCHEDULED' || status === 'TIMED' ? 'agendado' : 'outro'
 
 const agora = Date.now()
