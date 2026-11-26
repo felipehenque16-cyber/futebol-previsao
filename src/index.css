@@ -1,24 +1,8 @@
-:root {
-  --fundo: #f3f6f2;
-  --cartao: #ffffff;
-  --tinta: #15251d;
-  --suave: #68776d;
-  --linha: #dce5dc;
-  --campo: #102f25;
-  --casa: #168354;
-  --empate: #aeb8ae;
-  --fora: #356da8;
-  --ok: #168354;
-  --ruim: #b3402e;
-  color-scheme: light;
-}
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+:root { font-family: 'Barlow', system-ui, sans-serif; color: #183126; background: #f4f6f2; font-synthesis: none; text-rendering: optimizeLegibility; --fundo: #f4f6f2; --cartao: #fff; --tinta: #183126; --suave: #718078; --linha: #e2e9e2; --campo: #153e2d; --casa: #218b58; --empate: #a9b5ad; --fora: #5487c5; --ok: #218b58; --ruim: #b64d40; }
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--fundo);
-  color: var(--tinta);
-  font: 400 16px/1.5 'Barlow', system-ui, sans-serif;
-}
+body { margin: 0; min-width: 320px; background: var(--fundo); }
+button, select { font: inherit; }
 .topo {
   background: radial-gradient(ellipse at 50% -25%, #285b43 0%, transparent 62%), var(--campo);
   color: #eef6ef;
@@ -64,8 +48,9 @@ h2 { display: flex; align-items: center; gap: 9px; font: 600 23px 'Barlow Conden
 .b-fora { background: var(--fora); }
 .numeros { display: flex; justify-content: space-between; gap: 5px; margin-top: 7px; font: 600 14px 'Barlow', sans-serif; }
 .numeros span:nth-child(2) { color: var(--suave); font-weight: 500; }
-.gols-esperados { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf1ed; color: var(--suave); font-size: 12px; }
-.gols-esperados strong { color: var(--tinta); font: 600 14px 'Barlow', sans-serif; }
+.gols-esperados, .elo-times { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf1ed; color: var(--suave); font-size: 12px; }
+.gols-esperados strong, .elo-times strong { color: var(--tinta); font: 600 14px 'Barlow', sans-serif; font-variant-numeric: tabular-nums; }
+.elo-times { margin-top: 7px; }
 .veredito { margin: 8px 0 0; font-size: 13px; color: var(--suave); }
 .aviso { padding: 16px; color: var(--suave); background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; }
 footer { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; font-size: 12px; color: var(--suave); }
@@ -80,6 +65,5 @@ footer { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; font-size: 12
   :root { --fundo: #0d1712; --cartao: #17241c; --tinta: #edf4ee; --suave: #a0b0a5; --linha: #2a3b30; --campo: #183b2c; --casa: #48b985; --empate: #69786e; --fora: #75a4df; --ok: #60ca98; --ruim: #f09584; color-scheme: dark; }
   .resumo strong { color: #a9dfbd; }
   .contagem { background: #263b2e; color: #c3d7c8; }
-  .gols-esperados { border-top-color: #2a3b30; }
-  .topo { background: radial-gradient(ellipse at 50% -25%, #285b43 0%, transparent 62%), #0b2119; }
+  .gols-esperados, .elo-times { border-top-color: #2a3b30; }
 }
