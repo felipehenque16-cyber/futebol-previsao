@@ -1,4 +1,4 @@
-// Busca jogos no football-data.org, calcula previsões e grava public/dados/jogos.json.
+// Busca jogos no football-data.org, calcula previsões e grava jogos + histórico para backtesting.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { prever, type Partida } from './modelo.ts'
 
@@ -33,6 +33,13 @@ interface PartidaApi {
   awayTeam: TimeApi
   score: { fullTime: { home: number | null; away: number | null } }
 }
+interface JogoHistorico extends Partida {
+  id: number
+  codigo: string
+  competicao: string
+  mandanteNome: string
+  visitanteNome: string
+}
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 async function buscar(codigo: string): Promise<PartidaApi[]> {
@@ -59,6 +66,7 @@ const situacao = (status: string) =>
 
 const agora = Date.now()
 const jogos: unknown[] = []
+const historicoCompleto: JogoHistorico[] = []
 for (const [codigo, titulo] of COMPETICOES) {
   try {
     const todas = await buscar(codigo)
@@ -81,7 +89,6 @@ for (const [codigo, titulo] of COMPETICOES) {
 
       const golsCasa = partida.score.fullTime.home
       const golsFora = partida.score.fullTime.away
-      // Não inventa placar 0–0 quando a API ainda não informou o resultado.
       const placar = golsCasa !== null && golsFora !== null ? { casa: golsCasa, fora: golsFora } : null
       jogos.push({
         id: partida.id,
@@ -95,6 +102,25 @@ for (const [codigo, titulo] of COMPETICOES) {
         previsao: prever(historico, partida.homeTeam.id, partida.awayTeam.id, quando),
       })
     }
+    for (const p of todas) {
+      const golsCasa = p.score.fullTime.home
+      const golsFora = p.score.fullTime.away
+      const data = Date.parse(p.utcDate)
+      if (p.status !== 'FINISHED' || golsCasa === null || golsFora === null ||
+        !Number.isFinite(data) || !p.homeTeam.id || !p.awayTeam.id) continue
+      historicoCompleto.push({
+        id: p.id,
+        codigo,
+        competicao: titulo,
+        data,
+        mandante: p.homeTeam.id,
+        visitante: p.awayTeam.id,
+        golsMandante: golsCasa,
+        golsVisitante: golsFora,
+        mandanteNome: nome(p.homeTeam),
+        visitanteNome: nome(p.awayTeam),
+      })
+    }
     console.log(`${codigo}: ${historico.length} jogos históricos válidos; ${todas.length} partidas recebidas`)
   } catch (erro) {
     console.warn(`${codigo}: ignorada (${erro instanceof Error ? erro.message : erro})`)
@@ -106,4 +132,8 @@ await writeFile(`${PASTA}/jogos.json`, JSON.stringify({
   atualizadoEm: new Date().toISOString(),
   jogos: jogos.sort((a, b) => Date.parse((a as {data:string}).data) - Date.parse((b as {data:string}).data)),
 }))
-console.log(`${jogos.length} jogos gravados em ${PASTA}/jogos.json`)
+await writeFile(`${PASTA}/historico.json`, JSON.stringify({
+  atualizadoEm: new Date().toISOString(),
+  jogos: historicoCompleto.sort((a, b) => a.data - b.data),
+}))
+console.log(`${jogos.length} jogos gravados; ${historicoCompleto.length} resultados históricos salvos em ${PASTA}`)
