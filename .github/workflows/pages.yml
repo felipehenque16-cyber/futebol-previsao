@@ -1,0 +1,46 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */3 * * *' # atualiza as previsões a cada 3 horas
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+      - run: yarn install
+      - run: yarn build
+      # Jogos e previsões do dia; a chave fica em Settings → Secrets → FOOTBALL_DATA_TOKEN.
+      - run: node scripts/gerar-jogos.ts dist/dados
+        env:
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
