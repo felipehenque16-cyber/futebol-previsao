@@ -73,6 +73,10 @@ function Cartao({ jogo }: { jogo: Jogo }) {
             <span>Gols esperados</span>
             <strong>{jogo.previsao!.golsEsperadosCasa.toFixed(2)} × {jogo.previsao!.golsEsperadosFora.toFixed(2)}</strong>
           </div>
+          <div className="elo-times">
+            <span>Força Elo</span>
+            <strong>{Math.round(jogo.previsao!.eloMandante)} × {Math.round(jogo.previsao!.eloVisitante)}</strong>
+          </div>
         </>
       )}
       <p className="veredito">{veredito}</p>
@@ -147,7 +151,7 @@ export default function App() {
       </main>
       <footer>
         {dados && <p>Dados atualizados em {fmtAtualizacao.format(new Date(dados.atualizadoEm))}.</p>}
-        <p>Probabilidades estimadas pelo modelo Poisson, com maior peso para partidas recentes. Gols esperados são estimativas do modelo, não estatísticas oficiais de xG.</p>
+        <p>Modelo híbrido Elo + Poisson: Elo estima a força relativa dos clubes e Poisson converte o desempenho em probabilidades de gols. Gols esperados são estimativas do modelo, não xG oficial.</p>
       </footer>
     </>
   )
