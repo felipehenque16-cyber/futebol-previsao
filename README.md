@@ -37,6 +37,8 @@ O workflow `.github/workflows/pages.yml` publica no GitHub Pages a cada push e
 a cada 3 horas. Crie o secret `FOOTBALL_DATA_TOKEN` em Settings → Secrets and
 variables → Actions e deixe a origem do Pages como **GitHub Actions**.
 
+Se publicar pelo Vercel, configure também `FOOTBALL_DATA_TOKEN` em Project Settings → Environment Variables. O comando de build gera os arquivos de partidas e backtesting antes de compilar o site; sem essa variável a geração é interrompida para evitar publicar uma página vazia.
+
 ## Instalar no celular
 
 O site é um PWA. Depois de publicado no GitHub Pages (endereço `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`):
