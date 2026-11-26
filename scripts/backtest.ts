@@ -48,9 +48,9 @@ const jogos = arquivo.jogos
   .sort((a, b) => a.data - b.data)
 const historicoPorCompeticao = new Map<string, Partida[]>()
 const avaliacoes: Avaliacao[] = []
-const contarResultados = (historico: Partida[]) => {
+const contarResultados = (historico: Partida[], antesDe: number) => {
   const contagem = { casa: 0, empate: 0, fora: 0 }
-  for (const p of historico) {
+  for (const p of historico.filter((partida) => partida.data < antesDe)) {
     if (p.golsMandante > p.golsVisitante) contagem.casa++
     else if (p.golsMandante === p.golsVisitante) contagem.empate++
     else contagem.fora++
@@ -73,7 +73,7 @@ for (const jogo of jogos) {
       (probabilidades.empate - alvo.empate) ** 2 +
       (probabilidades.fora - alvo.fora) ** 2) / 3
     const probReal = Math.max(1e-15, probabilidades[resultadoReal])
-    const contagem = contarResultados(historico)
+    const contagem = contarResultados(historico, jogo.data)
     const baseline = (Object.entries(contagem) as [Resultado, number][]).sort((a, b) => b[1] - a[1])[0][0]
     avaliacoes.push({
       id: jogo.id,
