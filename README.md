@@ -28,7 +28,7 @@ yarn install
 export FOOTBALL_DATA_TOKEN=sua_chave   # grátis em football-data.org
 yarn jogos    # gera jogos.json e historico.json
 node scripts/backtest.ts public/dados/historico.json public/dados/backtest.json
-yarn dev      # http://localhost:5173
+yarn dev      # http://localhost:5173 (para dados atualizados, execute yarn jogos antes)
 ```
 
 ## Publicação
