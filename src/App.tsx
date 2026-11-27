@@ -140,12 +140,11 @@ export default function App() {
   }, [jogosFiltrados, aba])
   const comPrevisao = jogosFiltrados.filter((jogo) => jogo.previsao).length
   const partidasAoVivo = jogosFiltrados.filter((jogo) => jogo.situacao === 'aoVivo').length
-  const destaque = jogosFiltrados.find((jogo) => jogo.previsao) ?? jogosFiltrados[0]
 
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="Quem leva? Início">
+        <a className="brand" href="#partidas" aria-label="Quem leva? Jogos">
           <BrandMark />
           <span className="brand-copy"><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></span>
         </a>
@@ -154,83 +153,13 @@ export default function App() {
           <a href="#desempenho">Desempenho</a>
           <a href="#sobre">O projeto</a>
         </nav>
-        <div className="top-status"><span /> ANÁLISE ATIVA</div>
+        <div className="top-status"><span /> JOGOS E PROBABILIDADES</div>
       </header>
 
       <main className="dashboard" id="inicio">
-        <section className="hero">
-          <div className="hero-copy">
-            <span className="eyebrow"><i /> INTELIGÊNCIA ESPORTIVA</span>
-            <h1>O futebol,<br /><em>além do placar.</em></h1>
-            <p>Probabilidades, desempenho e contexto para ler cada partida com mais profundidade.</p>
-            <a className="hero-link" href="#partidas">Ver partidas <span>↗</span></a>
-          </div>
-          <div className="hero-feature">
-            <div className="feature-topline"><span>JOGO EM FOCO</span><span className="feature-live"><i /> MODELO ATIVO</span></div>
-            {destaque ? (
-              <>
-                <div className="feature-league">{destaque.competicao}</div>
-                <div className="feature-teams">
-                  <div className="feature-team"><Selo time={destaque.mandante} /></div>
-                  <div className="feature-vs">{destaque.placar ? destaque.placar.casa + ' : ' + destaque.placar.fora : 'VS'}</div>
-                  <div className="feature-team"><Selo time={destaque.visitante} /></div>
-                </div>
-                <div className="feature-date">{fmtJogo.format(new Date(destaque.data))}</div>
-                {destaque.previsao ? (
-                  <div className="feature-probabilities">
-                    <div className="feature-prob-head"><span>PROBABILIDADE DE RESULTADO</span><span>MODELO ELO + POISSON</span></div>
-                    <div className="feature-prob-bar"><i style={{flexGrow:percentuais(destaque).casa}}/><i style={{flexGrow:percentuais(destaque).empate}}/><i style={{flexGrow:percentuais(destaque).fora}}/></div>
-                    <div className="feature-prob-values"><span>CASA <b>{percentuais(destaque).casa}%</b></span><span>EMPATE <b>{percentuais(destaque).empate}%</b></span><span>FORA <b>{percentuais(destaque).fora}%</b></span></div>
-                  </div>
-                ) : <div className="feature-no-data">Histórico insuficiente para calcular probabilidades.</div>}
-              </>
-            ) : <div className="feature-empty">As próximas partidas aparecerão aqui quando os dados forem atualizados.</div>}
-            <a className="feature-open" href="#partidas">Explorar central de partidas <span>→</span></a>
-          </div>
-          <div className="hero-foot"><span>01 / MATCH CENTER</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SEM APOSTAS · SÓ DADOS</span></div>
-        </section>
-
-        <section className="overview" aria-label="Resumo das partidas">
-          <div className="section-kicker"><span>VISÃO GERAL</span><span>SEUS DADOS EM TEMPO REAL</span></div>
-          <div className="overview-grid">
-            <article className="overview-card featured"><span className="overview-icon">◈</span><span className="overview-label">PARTIDAS NA LISTA</span><strong>{jogosFiltrados.length.toString().padStart(2, '0')}</strong><small>Jogos no filtro atual</small></article>
-            <article className="overview-card"><span className="overview-icon">⌁</span><span className="overview-label">COM PREVISÃO</span><strong>{comPrevisao.toString().padStart(2, '0')}</strong><small>Estimativas disponíveis</small></article>
-            <article className="overview-card"><span className="overview-icon">◷</span><span className="overview-label">SEM HISTÓRICO</span><strong>{(jogosFiltrados.length - comPrevisao).toString().padStart(2, '0')}</strong><small>Dados ainda insuficientes</small></article>
-            <article className="overview-card live-overview"><span className="overview-icon">●</span><span className="overview-label">AO VIVO</span><strong>{partidasAoVivo.toString().padStart(2, '0')}</strong><small>Partidas em andamento</small></article>
-          </div>
-        </section>
-
-        {backtest && (
-          <section className="performance-panel" id="desempenho" aria-label="Desempenho histórico do modelo">
-            <div className="panel-heading">
-              <div><span className="section-kicker-text">MODEL PERFORMANCE / 02</span><h2>O modelo em campo<span>.</span></h2><p>Resultados de validação histórica, jogo a jogo.</p></div>
-              <div className="sample-tag"><span /> {backtest.metricas.partidasTestadas} JOGOS AVALIADOS</div>
-            </div>
-            <div className="performance-metrics">
-              <div className="performance-metric main-metric"><span>ACURÁCIA DO MODELO</span><strong>{(backtest.metricas.acuracia * 100).toFixed(1)}<small>%</small></strong><small>Taxa de resultados corretos</small></div>
-              <div className="performance-metric"><span>BASELINE</span><strong>{(backtest.metricas.acuraciaBaseline * 100).toFixed(1)}<small>%</small></strong><small>Referência estatística simples</small></div>
-              <div className="performance-metric"><span>BRIER SCORE</span><strong>{backtest.metricas.brierScore.toFixed(3)}</strong><small>Menor é melhor</small></div>
-              <div className="performance-metric"><span>LOG LOSS</span><strong>{backtest.metricas.logLoss.toFixed(3)}</strong><small>Menor é melhor</small></div>
-            </div>
-            <div className="competition-performance">
-              <div className="subheading"><h3>Precisão por competição</h3><span>ACURÁCIA · AMOSTRA</span></div>
-              <div className="performance-list">
-                {Object.entries(backtest.porCompeticao).sort((a, b) => b[1].partidasTestadas - a[1].partidasTestadas).map(([nome, m]) => (
-                  <div className="performance-row" key={nome}>
-                    <span className="competition-name">{nome}<small>{m.partidasTestadas} partidas</small></span>
-                    <div className="performance-track"><i style={{ width: `${Math.round(m.acuracia * 100)}%` }} /></div>
-                    <strong>{(m.acuracia * 100).toFixed(0)}%</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="performance-note">{backtest.observacao}</p>
-          </section>
-        )}
-
         <section className="matches-section" id="partidas">
           <div className="matches-heading">
-            <div><span className="section-kicker-text">FIXTURES & RESULTS / 01</span><h2>Central de partidas<span>.</span></h2><p>Acompanhe confrontos e probabilidades calculadas pelo modelo.</p></div>
+            <div><span className="section-kicker-text">FUTEBOL · AO VIVO E PRÓXIMOS</span><h2>Jogos<span>.</span></h2><p>Partidas, placares e probabilidades em um só lugar.</p></div>
             <div className="match-count"><strong>{jogosFiltrados.length}</strong><span>PARTIDAS</span></div>
           </div>
           <div className="filters">
@@ -255,7 +184,7 @@ export default function App() {
         </section>
       </main>
       <footer className="site-footer" id="sobre">
-        <div className="footer-brand"><span className="brand-mark">QL<span>·</span></span><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
+        <div className="footer-brand"><BrandMark /><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
         <p>Modelo híbrido Elo + Poisson: Elo estima a força relativa dos clubes e Poisson converte o desempenho em probabilidades de gols. Gols esperados são estimativas do modelo, não xG oficial.</p>
         <div className="footer-bottom"><span>ANÁLISE ESTATÍSTICA · SEM APOSTAS</span>{dados && <span>DADOS ATUALIZADOS EM {fmtAtualizacao.format(new Date(dados.atualizadoEm))}</span>}<span>FEITO PARA ENTENDER O JOGO.</span></div>
       </footer>
