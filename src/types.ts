@@ -9,6 +9,8 @@ export interface Previsao {
   fora: number
   golsEsperadosCasa: number
   golsEsperadosFora: number
+  eloMandante: number
+  eloVisitante: number
 }
 
 export interface Jogo {

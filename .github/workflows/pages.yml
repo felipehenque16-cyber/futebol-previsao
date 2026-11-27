@@ -24,11 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: yarn
       - run: yarn install
       - run: yarn build
-      # Jogos e previsões do dia; a chave fica em Settings → Secrets → FOOTBALL_DATA_TOKEN.
-      - run: node scripts/gerar-jogos.ts dist/dados
         env:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
       - uses: actions/upload-pages-artifact@v3

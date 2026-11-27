@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/gerar-jogos.ts public/dados && node scripts/backtest.ts public/dados/historico.json public/dados/backtest.json && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "vite build && vite preview",
-    "jogos": "node scripts/gerar-jogos.ts public/dados"
+    "start": "npm run build && vite preview",
+    "jogos": "node scripts/gerar-jogos.ts public/dados",
+    "backtest": "node scripts/backtest.ts public/dados/historico.json public/dados/backtest.json"
   },
   "dependencies": {
     "react": "^19.2.8",
