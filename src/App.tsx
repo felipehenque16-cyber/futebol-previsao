@@ -150,8 +150,7 @@ export default function App() {
         </a>
         <nav className="top-nav" aria-label="Navegação principal">
           <a className="active" href="#partidas">Partidas</a>
-          <a href="#desempenho">Desempenho</a>
-          <a href="#sobre">O projeto</a>
+          <a href="#sobre">Sobre</a>
         </nav>
         <div className="top-status"><span /> JOGOS E PROBABILIDADES</div>
       </header>
