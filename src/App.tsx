@@ -51,6 +51,9 @@ function Selo({ time }: { time: Jogo['mandante'] }) {
     </span>
   )
 }
+function BrandMark() {
+  return <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M7 11.5 20 5l13 6.5v17L20 35 7 28.5v-17Z" stroke="currentColor" strokeWidth="1.7"/><path d="M7.5 12 20 18.5 32.5 12M20 18.5V34M13 8.5l13.5 7M27 8.5l-13.5 7" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/><path d="m13 26 4.2-4 3.2 2.3 6.4-6" stroke="#07120D" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="26.8" cy="18.3" r="2.2" fill="#07120D"/></svg></span>
+}
 function Cartao({ jogo }: { jogo: Jogo }) {
   const quando = fmtJogo.format(new Date(jogo.data))
   const real = resultadoReal(jogo)
@@ -141,76 +144,21 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="Quem leva? Início">
-          <span className="brand-mark">QL<span>·</span></span>
+        <a className="brand" href="#partidas" aria-label="Quem leva? Jogos">
+          <BrandMark />
           <span className="brand-copy"><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></span>
         </a>
         <nav className="top-nav" aria-label="Navegação principal">
           <a className="active" href="#partidas">Partidas</a>
-          <a href="#desempenho">Desempenho</a>
-          <a href="#sobre">O projeto</a>
+          <a href="#sobre">Sobre</a>
         </nav>
-        <div className="top-status"><span /> ANÁLISE ATIVA</div>
+        <div className="top-status"><span /> JOGOS E PROBABILIDADES</div>
       </header>
 
       <main className="dashboard" id="inicio">
-        <section className="hero">
-          <div className="hero-copy">
-            <span className="eyebrow"><i /> CENTRAL DE INTELIGÊNCIA ESPORTIVA</span>
-            <h1>O jogo vai além<br />do <em>palpite.</em></h1>
-            <p>Dados, contexto e modelos estatísticos para entender as probabilidades por trás de cada partida.</p>
-            <a className="hero-link" href="#partidas">Explorar partidas <span>↗</span></a>
-          </div>
-          <div className="hero-art" aria-hidden="true">
-            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
-            <div className="hero-ball">⚽</div>
-            <div className="hero-chip chip-top"><span>MODEL</span><strong>ELO + POISSON</strong></div>
-            <div className="hero-chip chip-bottom"><span>DATA DRIVEN</span><strong>NO BETTING. JUST DATA.</strong></div>
-          </div>
-          <div className="hero-foot"><span>01 / 03</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SCROLL TO EXPLORE ↓</span></div>
-        </section>
-
-        <section className="overview" aria-label="Resumo das partidas">
-          <div className="section-kicker"><span>VISÃO GERAL</span><span>SEUS DADOS EM TEMPO REAL</span></div>
-          <div className="overview-grid">
-            <article className="overview-card featured"><span className="overview-icon">◈</span><span className="overview-label">PARTIDAS NA LISTA</span><strong>{jogosFiltrados.length.toString().padStart(2, '0')}</strong><small>Jogos no filtro atual</small></article>
-            <article className="overview-card"><span className="overview-icon">⌁</span><span className="overview-label">COM PREVISÃO</span><strong>{comPrevisao.toString().padStart(2, '0')}</strong><small>Estimativas disponíveis</small></article>
-            <article className="overview-card"><span className="overview-icon">◷</span><span className="overview-label">SEM HISTÓRICO</span><strong>{(jogosFiltrados.length - comPrevisao).toString().padStart(2, '0')}</strong><small>Dados ainda insuficientes</small></article>
-            <article className="overview-card live-overview"><span className="overview-icon">●</span><span className="overview-label">AO VIVO</span><strong>{partidasAoVivo.toString().padStart(2, '0')}</strong><small>Partidas em andamento</small></article>
-          </div>
-        </section>
-
-        {backtest && (
-          <section className="performance-panel" id="desempenho" aria-label="Desempenho histórico do modelo">
-            <div className="panel-heading">
-              <div><span className="section-kicker-text">MODEL PERFORMANCE / 02</span><h2>O modelo em campo<span>.</span></h2><p>Resultados de validação histórica, jogo a jogo.</p></div>
-              <div className="sample-tag"><span /> {backtest.metricas.partidasTestadas} JOGOS AVALIADOS</div>
-            </div>
-            <div className="performance-metrics">
-              <div className="performance-metric main-metric"><span>ACURÁCIA DO MODELO</span><strong>{(backtest.metricas.acuracia * 100).toFixed(1)}<small>%</small></strong><small>Taxa de resultados corretos</small></div>
-              <div className="performance-metric"><span>BASELINE</span><strong>{(backtest.metricas.acuraciaBaseline * 100).toFixed(1)}<small>%</small></strong><small>Referência estatística simples</small></div>
-              <div className="performance-metric"><span>BRIER SCORE</span><strong>{backtest.metricas.brierScore.toFixed(3)}</strong><small>Menor é melhor</small></div>
-              <div className="performance-metric"><span>LOG LOSS</span><strong>{backtest.metricas.logLoss.toFixed(3)}</strong><small>Menor é melhor</small></div>
-            </div>
-            <div className="competition-performance">
-              <div className="subheading"><h3>Precisão por competição</h3><span>ACURÁCIA · AMOSTRA</span></div>
-              <div className="performance-list">
-                {Object.entries(backtest.porCompeticao).sort((a, b) => b[1].partidasTestadas - a[1].partidasTestadas).map(([nome, m]) => (
-                  <div className="performance-row" key={nome}>
-                    <span className="competition-name">{nome}<small>{m.partidasTestadas} partidas</small></span>
-                    <div className="performance-track"><i style={{ width: `${Math.round(m.acuracia * 100)}%` }} /></div>
-                    <strong>{(m.acuracia * 100).toFixed(0)}%</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="performance-note">{backtest.observacao}</p>
-          </section>
-        )}
-
         <section className="matches-section" id="partidas">
           <div className="matches-heading">
-            <div><span className="section-kicker-text">FIXTURES & RESULTS / 01</span><h2>Central de partidas<span>.</span></h2><p>Acompanhe confrontos e probabilidades calculadas pelo modelo.</p></div>
+            <div><span className="section-kicker-text">FUTEBOL · AO VIVO E PRÓXIMOS</span><h2>Jogos<span>.</span></h2><p>Partidas, placares e probabilidades em um só lugar.</p></div>
             <div className="match-count"><strong>{jogosFiltrados.length}</strong><span>PARTIDAS</span></div>
           </div>
           <div className="filters">
@@ -235,7 +183,7 @@ export default function App() {
         </section>
       </main>
       <footer className="site-footer" id="sobre">
-        <div className="footer-brand"><span className="brand-mark">QL<span>·</span></span><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
+        <div className="footer-brand"><BrandMark /><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
         <p>Modelo híbrido Elo + Poisson: Elo estima a força relativa dos clubes e Poisson converte o desempenho em probabilidades de gols. Gols esperados são estimativas do modelo, não xG oficial.</p>
         <div className="footer-bottom"><span>ANÁLISE ESTATÍSTICA · SEM APOSTAS</span>{dados && <span>DADOS ATUALIZADOS EM {fmtAtualizacao.format(new Date(dados.atualizadoEm))}</span>}<span>FEITO PARA ENTENDER O JOGO.</span></div>
       </footer>
