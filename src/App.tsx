@@ -46,7 +46,7 @@ function resultadoReal(jogo: Jogo): Lado | null {
 function Selo({ time }: { time: Jogo['mandante'] }) {
   return (
     <span className="time">
-      {time.escudo ? <img src={time.escudo} alt="" width={24} height={24} loading="lazy" /> : <span className="escudo-vazio" />}
+      {time.escudo ? <img src={time.escudo} alt="" width={30} height={30} loading="lazy" /> : <span className="escudo-vazio" />}
       <span className="nome">{time.nome}</span>
     </span>
   )
@@ -63,39 +63,37 @@ function Cartao({ jogo }: { jogo: Jogo }) {
     else veredito = `Favorito: ${mp.lado === 'casa' ? jogo.mandante.nome : jogo.visitante.nome}`
   }
   return (
-    <li className="cartao">
-      <div className="cabeca">
-        <span className={jogo.situacao === 'aoVivo' ? 'ao-vivo' : ''}>
-          {jogo.situacao === 'aoVivo' ? '● Ao vivo' : quando}
+    <li className="match-card">
+      <div className="match-meta">
+        <span className={jogo.situacao === 'aoVivo' ? 'live-label' : 'match-date'}>
+          {jogo.situacao === 'aoVivo' ? <><i /> AO VIVO</> : quando}
         </span>
-        {real && mp && <span className={mp.lado === real ? 'acerto' : 'erro'}>{mp.lado === real ? 'Previsão acertou' : 'Previsão não acertou'}</span>}
+        {real && mp && <span className={mp.lado === real ? 'result-hit' : 'result-miss'}>{mp.lado === real ? '✓ Previsão acertou' : 'Previsão não acertou'}</span>}
       </div>
-      <div className="times">
+      <div className="match-teams">
         <Selo time={jogo.mandante} />
-        <span className="placar">{jogo.placar ? `${jogo.placar.casa} × ${jogo.placar.fora}` : '×'}</span>
+        <span className="match-score">{jogo.placar ? `${jogo.placar.casa} : ${jogo.placar.fora}` : 'VS'}</span>
         <Selo time={jogo.visitante} />
       </div>
-      {pr && (
-        <>
-          <div className="barra" role="img" aria-label={`Casa ${pr.casa}%, empate ${pr.empate}%, visitante ${pr.fora}%`}>
-            <span className="b-casa" style={{ flexGrow: pr.casa }} />
-            <span className="b-empate" style={{ flexGrow: pr.empate }} />
-            <span className="b-fora" style={{ flexGrow: pr.fora }} />
+      {pr ? (
+        <div className="prediction">
+          <div className="prediction-bar" role="img" aria-label={`Casa ${pr.casa}%, empate ${pr.empate}%, visitante ${pr.fora}%`}>
+            <span className="bar-home" style={{ flexGrow: pr.casa }} />
+            <span className="bar-draw" style={{ flexGrow: pr.empate }} />
+            <span className="bar-away" style={{ flexGrow: pr.fora }} />
           </div>
-          <div className="numeros">
-            <span>Casa {pr.casa}%</span><span>Empate {pr.empate}%</span><span>Fora {pr.fora}%</span>
+          <div className="prediction-values">
+            <span><i className="dot-home" /> Casa <b>{pr.casa}%</b></span>
+            <span><i className="dot-draw" /> Empate <b>{pr.empate}%</b></span>
+            <span><i className="dot-away" /> Fora <b>{pr.fora}%</b></span>
           </div>
-          <div className="gols-esperados">
-            <span>Gols esperados</span>
-            <strong>{jogo.previsao!.golsEsperadosCasa.toFixed(2)} × {jogo.previsao!.golsEsperadosFora.toFixed(2)}</strong>
+          <div className="match-details">
+            <div><span>Gols esperados</span><strong>{jogo.previsao!.golsEsperadosCasa.toFixed(2)} <small>:</small> {jogo.previsao!.golsEsperadosFora.toFixed(2)}</strong></div>
+            <div><span>Rating Elo</span><strong>{Math.round(jogo.previsao!.eloMandante)} <small>:</small> {Math.round(jogo.previsao!.eloVisitante)}</strong></div>
           </div>
-          <div className="elo-times">
-            <span>Força Elo</span>
-            <strong>{Math.round(jogo.previsao!.eloMandante)} × {Math.round(jogo.previsao!.eloVisitante)}</strong>
-          </div>
-        </>
-      )}
-      <p className="veredito">{veredito}</p>
+        </div>
+      ) : <div className="no-prediction">Dados insuficientes para calcular uma previsão confiável.</div>}
+      <p className="match-verdict">{veredito}</p>
     </li>
   )
 }
@@ -138,70 +136,109 @@ export default function App() {
     return [...porCamp]
   }, [jogosFiltrados, aba])
   const comPrevisao = jogosFiltrados.filter((jogo) => jogo.previsao).length
+  const partidasAoVivo = jogosFiltrados.filter((jogo) => jogo.situacao === 'aoVivo').length
 
   return (
-    <>
-      <header className="topo">
-        <div className="marca"><span className="marca-bola">⚽</span><span>INTELIGÊNCIA DE JOGO</span></div>
-        <h1>Quem leva<span>?</span></h1>
-        <p>Probabilidades calculadas com estatística. Futebol é imprevisível — nenhuma previsão é garantia.</p>
-        <div className="topo-selo">ANÁLISE ESTATÍSTICA · SEM APOSTAS</div>
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="#inicio" aria-label="Quem leva? Início">
+          <span className="brand-mark">QL<span>·</span></span>
+          <span className="brand-copy"><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></span>
+        </a>
+        <nav className="top-nav" aria-label="Navegação principal">
+          <a className="active" href="#partidas">Partidas</a>
+          <a href="#desempenho">Desempenho</a>
+          <a href="#sobre">O projeto</a>
+        </nav>
+        <div className="top-status"><span /> ANÁLISE ATIVA</div>
       </header>
-      <main>
-        <section className="resumo" aria-label="Resumo dos dados">
-          <div><strong>{jogosFiltrados.length}</strong><span>partidas na lista</span></div>
-          <div><strong>{comPrevisao}</strong><span>com previsão</span></div>
-          <div><strong>{jogosFiltrados.length - comPrevisao}</strong><span>sem dados suficientes</span></div>
-        </section>
-        <div className="controles">
-          <div className="abas" role="tablist" aria-label="Tipo de partida">
-            <button role="tab" aria-selected={aba === 'proximos'} onClick={() => setAba('proximos')}>Próximos</button>
-            <button role="tab" aria-selected={aba === 'resultados'} onClick={() => setAba('resultados')}>Resultados</button>
+
+      <main className="dashboard" id="inicio">
+        <section className="hero">
+          <div className="hero-copy">
+            <span className="eyebrow"><i /> CENTRAL DE INTELIGÊNCIA ESPORTIVA</span>
+            <h1>O jogo vai além<br />do <em>palpite.</em></h1>
+            <p>Dados, contexto e modelos estatísticos para entender as probabilidades por trás de cada partida.</p>
+            <a className="hero-link" href="#partidas">Explorar partidas <span>↗</span></a>
           </div>
-          <select value={campeonato} onChange={(e) => setCampeonato(e.target.value)} aria-label="Filtrar campeonato">
-            <option value="todos">Todos os campeonatos</option>
-            {campeonatos.map(([codigo, nome]) => <option key={codigo} value={codigo}>{nome}</option>)}
-          </select>
-        </div>
+          <div className="hero-art" aria-hidden="true">
+            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
+            <div className="hero-ball">⚽</div>
+            <div className="hero-chip chip-top"><span>MODEL</span><strong>ELO + POISSON</strong></div>
+            <div className="hero-chip chip-bottom"><span>DATA DRIVEN</span><strong>NO BETTING. JUST DATA.</strong></div>
+          </div>
+          <div className="hero-foot"><span>01 / 03</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SCROLL TO EXPLORE ↓</span></div>
+        </section>
+
+        <section className="overview" aria-label="Resumo das partidas">
+          <div className="section-kicker"><span>VISÃO GERAL</span><span>SEUS DADOS EM TEMPO REAL</span></div>
+          <div className="overview-grid">
+            <article className="overview-card featured"><span className="overview-icon">◈</span><span className="overview-label">PARTIDAS NA LISTA</span><strong>{jogosFiltrados.length.toString().padStart(2, '0')}</strong><small>Jogos no filtro atual</small></article>
+            <article className="overview-card"><span className="overview-icon">⌁</span><span className="overview-label">COM PREVISÃO</span><strong>{comPrevisao.toString().padStart(2, '0')}</strong><small>Estimativas disponíveis</small></article>
+            <article className="overview-card"><span className="overview-icon">◷</span><span className="overview-label">SEM HISTÓRICO</span><strong>{(jogosFiltrados.length - comPrevisao).toString().padStart(2, '0')}</strong><small>Dados ainda insuficientes</small></article>
+            <article className="overview-card live-overview"><span className="overview-icon">●</span><span className="overview-label">AO VIVO</span><strong>{partidasAoVivo.toString().padStart(2, '0')}</strong><small>Partidas em andamento</small></article>
+          </div>
+        </section>
+
         {backtest && (
-          <section className="desempenho" aria-label="Desempenho histórico do modelo">
-            <div className="desempenho-titulo">
-              <div><span className="sobrelinha">VALIDAÇÃO DO MODELO</span><h2>Como estamos indo?</h2></div>
-              <span className="amostra">{backtest.metricas.partidasTestadas} jogos avaliados</span>
+          <section className="performance-panel" id="desempenho" aria-label="Desempenho histórico do modelo">
+            <div className="panel-heading">
+              <div><span className="section-kicker-text">MODEL PERFORMANCE / 02</span><h2>O modelo em campo<span>.</span></h2><p>Resultados de validação histórica, jogo a jogo.</p></div>
+              <div className="sample-tag"><span /> {backtest.metricas.partidasTestadas} JOGOS AVALIADOS</div>
             </div>
-            <div className="metricas-grid">
-              <div><strong>{(backtest.metricas.acuracia * 100).toFixed(1)}%</strong><span>acerto do modelo</span></div>
-              <div><strong>{(backtest.metricas.acuraciaBaseline * 100).toFixed(1)}%</strong><span>referência simples</span></div>
-              <div><strong>{backtest.metricas.brierScore.toFixed(3)}</strong><span>Brier Score · menor é melhor</span></div>
-              <div><strong>{backtest.metricas.logLoss.toFixed(3)}</strong><span>Log Loss · menor é melhor</span></div>
+            <div className="performance-metrics">
+              <div className="performance-metric main-metric"><span>ACURÁCIA DO MODELO</span><strong>{(backtest.metricas.acuracia * 100).toFixed(1)}<small>%</small></strong><small>Taxa de resultados corretos</small></div>
+              <div className="performance-metric"><span>BASELINE</span><strong>{(backtest.metricas.acuraciaBaseline * 100).toFixed(1)}<small>%</small></strong><small>Referência estatística simples</small></div>
+              <div className="performance-metric"><span>BRIER SCORE</span><strong>{backtest.metricas.brierScore.toFixed(3)}</strong><small>Menor é melhor</small></div>
+              <div className="performance-metric"><span>LOG LOSS</span><strong>{backtest.metricas.logLoss.toFixed(3)}</strong><small>Menor é melhor</small></div>
             </div>
-            <h3>Precisão por campeonato</h3>
-            <div className="desempenho-lista">
-              {Object.entries(backtest.porCompeticao).sort((a, b) => b[1].partidasTestadas - a[1].partidasTestadas).map(([nome, m]) => (
-                <div className="desempenho-linha" key={nome}>
-                  <span>{nome}<small>{m.partidasTestadas} jogos</small></span>
-                  <div className="desempenho-trilho"><i style={{ width: `${Math.round(m.acuracia * 100)}%` }} /></div>
-                  <strong>{(m.acuracia * 100).toFixed(0)}%</strong>
-                </div>
-              ))}
+            <div className="competition-performance">
+              <div className="subheading"><h3>Precisão por competição</h3><span>ACURÁCIA · AMOSTRA</span></div>
+              <div className="performance-list">
+                {Object.entries(backtest.porCompeticao).sort((a, b) => b[1].partidasTestadas - a[1].partidasTestadas).map(([nome, m]) => (
+                  <div className="performance-row" key={nome}>
+                    <span className="competition-name">{nome}<small>{m.partidasTestadas} partidas</small></span>
+                    <div className="performance-track"><i style={{ width: `${Math.round(m.acuracia * 100)}%` }} /></div>
+                    <strong>{(m.acuracia * 100).toFixed(0)}%</strong>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="nota-desempenho">{backtest.observacao}</p>
+            <p className="performance-note">{backtest.observacao}</p>
           </section>
         )}
-        {carregando && <p className="aviso">Carregando partidas e previsões…</p>}
-        {erro && <p className="aviso">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
-        {!carregando && !erro && grupos.length === 0 && <p className="aviso">Nenhuma partida encontrada para este filtro.</p>}
-        {grupos.map(([titulo, jogos]) => (
-          <section key={titulo}>
-            <h2>{titulo}<span className="contagem">{jogos.length}</span></h2>
-            <ul className="lista">{jogos.map((jogo) => <Cartao key={jogo.id} jogo={jogo} />)}</ul>
-          </section>
-        ))}
+
+        <section className="matches-section" id="partidas">
+          <div className="matches-heading">
+            <div><span className="section-kicker-text">FIXTURES & RESULTS / 01</span><h2>Central de partidas<span>.</span></h2><p>Acompanhe confrontos e probabilidades calculadas pelo modelo.</p></div>
+            <div className="match-count"><strong>{jogosFiltrados.length}</strong><span>PARTIDAS</span></div>
+          </div>
+          <div className="filters">
+            <div className="tabs" role="tablist" aria-label="Tipo de partida">
+              <button role="tab" aria-selected={aba === 'proximos'} onClick={() => setAba('proximos')}>Próximos jogos</button>
+              <button role="tab" aria-selected={aba === 'resultados'} onClick={() => setAba('resultados')}>Resultados</button>
+            </div>
+            <label className="select-wrap"><span>COMPETIÇÃO</span><select value={campeonato} onChange={(e) => setCampeonato(e.target.value)} aria-label="Filtrar campeonato">
+              <option value="todos">Todos os campeonatos</option>
+              {campeonatos.map(([codigo, nome]) => <option key={codigo} value={codigo}>{nome}</option>)}
+            </select></label>
+          </div>
+          {carregando && <p className="notice">Carregando partidas e previsões…</p>}
+          {erro && <p className="notice error-notice">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
+          {!carregando && !erro && grupos.length === 0 && <p className="notice">Nenhuma partida encontrada para este filtro.</p>}
+          {grupos.map(([titulo, jogos]) => (
+            <section className="competition-section" key={titulo}>
+              <div className="competition-heading"><h3>{titulo}</h3><span>{jogos.length.toString().padStart(2, '0')} JOGOS</span></div>
+              <ul className="match-list">{jogos.map((jogo) => <Cartao key={jogo.id} jogo={jogo} />)}</ul>
+            </section>
+          ))}
+        </section>
       </main>
-      <footer>
-        {dados && <p>Dados atualizados em {fmtAtualizacao.format(new Date(dados.atualizadoEm))}.</p>}
+      <footer className="site-footer" id="sobre">
+        <div className="footer-brand"><span className="brand-mark">QL<span>·</span></span><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
         <p>Modelo híbrido Elo + Poisson: Elo estima a força relativa dos clubes e Poisson converte o desempenho em probabilidades de gols. Gols esperados são estimativas do modelo, não xG oficial.</p>
+        <div className="footer-bottom"><span>ANÁLISE ESTATÍSTICA · SEM APOSTAS</span>{dados && <span>DADOS ATUALIZADOS EM {fmtAtualizacao.format(new Date(dados.atualizadoEm))}</span>}<span>FEITO PARA ENTENDER O JOGO.</span></div>
       </footer>
-    </>
+    </div>
   )
 }
