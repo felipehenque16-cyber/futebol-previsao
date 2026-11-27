@@ -5,17 +5,17 @@ const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digi
 const dataHora = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
 const nomes: Record<string, string> = { BSA: 'Brasileirão Série A', CLI: 'Libertadores', CL: 'Champions League', PL: 'Premier League', PD: 'La Liga', SA: 'Serie A (Itália)', BL1: 'Bundesliga', FL1: 'Ligue 1', PPL: 'Primeira Liga', DED: 'Eredivisie', ELC: 'Championship' }
 const logos: Record<string, string> = {
-  BSA: 'https://crests.football-data.org/764.svg',
-  CLI: 'https://crests.football-data.org/CLI.svg',
-  CL: 'https://crests.football-data.org/CL.svg',
-  PL: 'https://crests.football-data.org/PL.svg',
+  BSA: 'https://assets.football-logos.cc/logos/brazil/256x256/brazilian-serie-a.f6ec92f8.png',
+  CLI: 'https://assets.football-logos.cc/logos/tournaments/512x512/conmebol-libertadores.38816506.png',
+  CL: 'https://assets.football-logos.cc/logos/tournaments/512x512/uefa-champions-league.effc906c.png',
+  PL: 'https://assets.football-logos.cc/logos/england/512x512/english-premier-league.b597f797.png',
   PD: 'https://crests.football-data.org/PD.svg',
-  SA: 'https://crests.football-data.org/SA.svg',
-  BL1: 'https://crests.football-data.org/BL1.svg',
-  FL1: 'https://crests.football-data.org/FL1.svg',
+  SA: 'https://assets.football-logos.cc/logos/italy/512x512/serie-a.1289b16a.png',
+  BL1: 'https://assets.football-logos.cc/logos/germany/512x512/bundesliga.24d9c6f9.png',
+  FL1: 'https://assets.football-logos.cc/logos/france/512x512/ligue-1.bcb13eb0.png',
   PPL: 'https://crests.football-data.org/PPL.svg',
-  DED: 'https://crests.football-data.org/DED.svg',
-  ELC: 'https://crests.football-data.org/ELC.svg',
+  DED: 'https://assets.football-logos.cc/logos/netherlands/512x512/eredivisie.a718427b.png',
+  ELC: 'https://assets.football-logos.cc/logos/england/1500x1500/efl-championship.c50fa46f.png',
 }
 const nomeCamp = (j: Jogo) => nomes[j.codigo] ?? j.competicao
 const escudoCamp = (codigo: string) => logos[codigo]
