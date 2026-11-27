@@ -117,7 +117,12 @@ for (const [codigo, titulo] of COMPETICOES) {
     }
     console.log(`${codigo}: ${historico.length} jogos históricos válidos; ${todas.length} partidas recebidas`)
   } catch (erro) {
-    console.warn(`${codigo}: ignorada (${erro instanceof Error ? erro.message : erro})`)
+    const motivo = erro instanceof Error ? erro.message : String(erro)
+    if (codigo === 'BSB') {
+      console.warn(`Brasileirão Série B: a API recusou o acesso (${motivo}). O football-data.org classifica esta competição no plano TIER_THREE; a chave atual precisa ter esse nível para fornecer os jogos.`)
+    } else {
+      console.warn(`${codigo}: ignorada (${motivo})`)
+    }
   }
   await dormir(7_000)
 }

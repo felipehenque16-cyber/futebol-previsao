@@ -10,6 +10,20 @@ const fmtAtualizacao = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Sao_Paulo',
 })
 const MARGEM_FAVORITO = 0.06
+const CATALOGO_CAMPEONATOS: [string, string][] = [
+  ['BSA', 'Brasileirão Série A'], ['BSB', 'Brasileirão Série B'],
+  ['CLI', 'Copa Libertadores'], ['CL', 'Champions League'],
+  ['PL', 'Premier League'], ['PD', 'La Liga'], ['SA', 'Serie A (Itália)'],
+  ['BL1', 'Bundesliga'], ['FL1', 'Ligue 1'], ['PPL', 'Primeira Liga'],
+  ['DED', 'Eredivisie'], ['ELC', 'Championship'],
+]
+const LOGOS_CAMPEONATOS: Record<string, string> = {
+  BSA: 'https://crests.football-data.org/764.svg',
+  BSB: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Campeonato_Brasileiro_S%C3%A9rie_B_logo_%282025%29.svg',
+}
+function logoCampeonato(codigo: string) {
+  return LOGOS_CAMPEONATOS[codigo] ?? `https://crests.football-data.org/${codigo}.png`
+}
 type Lado = 'casa' | 'empate' | 'fora'
 function percentuais(jogo: Jogo) {
   const previsao = jogo.previsao!
@@ -98,7 +112,7 @@ export default function App() {
   }, [])
 
   const campeonatos = useMemo(() => {
-    const mapa = new Map<string, string>()
+    const mapa = new Map<string, string>(CATALOGO_CAMPEONATOS)
     dados?.jogos.forEach((jogo) => mapa.set(jogo.codigo, jogo.competicao))
     return [...mapa]
   }, [dados])
@@ -145,10 +159,10 @@ export default function App() {
           </div>
           {carregando && <p className="notice">Carregando partidas e previsões…</p>}
           {erro && <p className="notice error-notice">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
-          {!carregando && !erro && grupos.length === 0 && <p className="notice">Nenhuma partida encontrada para este filtro.</p>}
+          {!carregando && !erro && grupos.length === 0 && <p className="notice">{campeonato === 'BSB' ? <>Série B está no catálogo, mas o football-data.org classifica essa competição no plano TIER_THREE. Se a chave não tiver esse nível, os jogos não são liberados. Enquanto isso, consulte a <a href="https://www.cbf.com.br/futebol-brasileiro/tabelas/campeonato-brasileiro/serie-b/2026" target="_blank" rel="noreferrer">tabela oficial da CBF</a>.</> : 'Nenhuma partida encontrada para este filtro.'}</p>}
           {grupos.map(([titulo, jogos]) => (
             <section className="competition-section" key={titulo}>
-              <div className="competition-heading"><h3>{titulo}</h3><span>{jogos.length.toString().padStart(2, '0')} JOGOS</span></div>
+              <div className="competition-heading"><div className="competition-title"><img src={logoCampeonato(jogos[0]?.codigo ?? '')} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} /><h3>{titulo}</h3></div><span>{jogos.length.toString().padStart(2, '0')} JOGOS</span></div>
               <ul className="match-list">{jogos.map((jogo) => <Cartao key={jogo.id} jogo={jogo} />)}</ul>
             </section>
           ))}
