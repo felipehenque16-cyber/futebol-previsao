@@ -1,101 +1,54 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Dados, Jogo } from './types'
 
-const fmtJogo = new Intl.DateTimeFormat('pt-BR', {
-  weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-  timeZone: 'America/Sao_Paulo',
-})
-const fmtAtualizacao = new Intl.DateTimeFormat('pt-BR', {
-  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-  timeZone: 'America/Sao_Paulo',
-})
-const MARGEM_FAVORITO = 0.06
-const CATALOGO_CAMPEONATOS: [string, string][] = [
-  ['BSA', 'Brasileirão Série A'], ['BSB', 'Brasileirão Série B'],
-  ['CLI', 'Copa Libertadores'], ['CL', 'Champions League'],
-  ['PL', 'Premier League'], ['PD', 'La Liga'], ['SA', 'Serie A (Itália)'],
-  ['BL1', 'Bundesliga'], ['FL1', 'Ligue 1'], ['PPL', 'Primeira Liga'],
-  ['DED', 'Eredivisie'], ['ELC', 'Championship'],
-]
-const LOGOS_CAMPEONATOS: Record<string, string> = {
+const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+const dataHora = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+const nomes: Record<string, string> = { BSA: 'Brasileirão Série A', CLI: 'Libertadores', CL: 'Champions League', PL: 'Premier League', PD: 'La Liga', SA: 'Serie A (Itália)', BL1: 'Bundesliga', FL1: 'Ligue 1', PPL: 'Primeira Liga', DED: 'Eredivisie', ELC: 'Championship' }
+const logos: Record<string, string> = {
   BSA: 'https://crests.football-data.org/764.svg',
-  BSB: 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Campeonato_Brasileiro_S%C3%A9rie_B_logo_%282025%29.svg',
+  CLI: 'https://crests.football-data.org/CLI.svg',
+  CL: 'https://crests.football-data.org/CL.svg',
+  PL: 'https://crests.football-data.org/PL.svg',
+  PD: 'https://crests.football-data.org/PD.svg',
+  SA: 'https://crests.football-data.org/SA.svg',
+  BL1: 'https://crests.football-data.org/BL1.svg',
+  FL1: 'https://crests.football-data.org/FL1.svg',
+  PPL: 'https://crests.football-data.org/PPL.svg',
+  DED: 'https://crests.football-data.org/DED.svg',
+  ELC: 'https://crests.football-data.org/ELC.svg',
 }
-function logoCampeonato(codigo: string) {
-  return LOGOS_CAMPEONATOS[codigo] ?? `https://crests.football-data.org/${codigo}.png`
-}
-type Lado = 'casa' | 'empate' | 'fora'
-function percentuais(jogo: Jogo) {
-  const previsao = jogo.previsao!
-  const casa = Math.round(previsao.casa * 100)
-  const fora = Math.round(previsao.fora * 100)
+const nomeCamp = (j: Jogo) => nomes[j.codigo] ?? j.competicao
+const escudoCamp = (codigo: string) => logos[codigo]
+const prob = (j: Jogo) => {
+  if (!j.previsao) return null
+  const casa = Math.round(j.previsao.casa * 100)
+  const fora = Math.round(j.previsao.fora * 100)
   return { casa, fora, empate: Math.max(0, 100 - casa - fora) }
 }
-function maisProvavel(jogo: Jogo): { lado: Lado; claro: boolean } {
-  const previsao = jogo.previsao!
-  const ordem = (['casa', 'empate', 'fora'] as Lado[]).sort((a, b) => previsao[b] - previsao[a])
-  return { lado: ordem[0], claro: previsao[ordem[0]] - previsao[ordem[1]] >= MARGEM_FAVORITO }
+const maiorProb = (j: Jogo) => j.previsao ? Math.max(j.previsao.casa, j.previsao.empate, j.previsao.fora) : 0
+const semSerieB = (j: Jogo) => j.codigo !== 'BSB' && !/série\\s*b/i.test(j.competicao)
+
+function Escudo({ nome, url, grande = false }: { nome: string; url: string | null; grande?: boolean }) {
+  return url
+    ? <img className={grande ? 'team-crest large' : 'team-crest'} src={url} alt={nome} loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+    : <span className={grande ? 'team-crest-fallback large' : 'team-crest-fallback'}>{nome.slice(0, 1).toUpperCase()}</span>
 }
-function resultadoReal(jogo: Jogo): Lado | null {
-  if (jogo.situacao !== 'encerrado' || !jogo.placar) return null
-  return jogo.placar.casa > jogo.placar.fora ? 'casa' : jogo.placar.casa < jogo.placar.fora ? 'fora' : 'empate'
+function Marca() {
+  return <img className="brand-logo" src="./logo-quem-leva.svg" alt="Soccer Championship" />
 }
-function Selo({ time }: { time: Jogo['mandante'] }) {
-  return (
-    <span className="time">
-      {time.escudo ? <img src={time.escudo} alt="" width={30} height={30} loading="lazy" /> : <span className="escudo-vazio" />}
-      <span className="nome">{time.nome}</span>
-    </span>
-  )
+function Probabilidades({ jogo }: { jogo: Jogo }) {
+  const p = prob(jogo)
+  if (!p) return <span className="no-data">Sem previsão</span>
+  return <div className="prob-pills"><b>{p.casa}%</b><span>{p.empate}%</span><span>{p.fora}%</span></div>
 }
-function BrandMark() {
-  return <img className="brand-logo" src="./logo-quem-leva.svg" alt="" aria-hidden="true" />
-}
-function Cartao({ jogo }: { jogo: Jogo }) {
-  const quando = fmtJogo.format(new Date(jogo.data))
-  const real = resultadoReal(jogo)
-  const pr = jogo.previsao ? percentuais(jogo) : null
-  const mp = jogo.previsao ? maisProvavel(jogo) : null
-  let veredito = 'Histórico insuficiente para estimar'
-  if (mp) {
-    if (!mp.claro) veredito = 'Confronto equilibrado'
-    else if (mp.lado === 'empate') veredito = 'Empate é o resultado mais provável'
-    else veredito = `Favorito: ${mp.lado === 'casa' ? jogo.mandante.nome : jogo.visitante.nome}`
-  }
-  return (
-    <li className="match-card">
-      <div className="match-meta">
-        <span className={jogo.situacao === 'aoVivo' ? 'live-label' : 'match-date'}>
-          {jogo.situacao === 'aoVivo' ? <><i /> AO VIVO</> : quando}
-        </span>
-        {real && mp && <span className={mp.lado === real ? 'result-hit' : 'result-miss'}>{mp.lado === real ? '✓ Previsão acertou' : 'Previsão não acertou'}</span>}
-      </div>
-      <div className="match-teams">
-        <Selo time={jogo.mandante} />
-        <span className="match-score">{jogo.placar ? `${jogo.placar.casa} : ${jogo.placar.fora}` : 'VS'}</span>
-        <Selo time={jogo.visitante} />
-      </div>
-      {pr ? (
-        <div className="prediction">
-          <div className="prediction-bar" role="img" aria-label={`Casa ${pr.casa}%, empate ${pr.empate}%, visitante ${pr.fora}%`}>
-            <span className="bar-home" style={{ flexGrow: pr.casa }} />
-            <span className="bar-draw" style={{ flexGrow: pr.empate }} />
-            <span className="bar-away" style={{ flexGrow: pr.fora }} />
-          </div>
-          <div className="prediction-values">
-            <span><i className="dot-home" /> Casa <b>{pr.casa}%</b></span>
-            <span><i className="dot-draw" /> Empate <b>{pr.empate}%</b></span>
-            <span><i className="dot-away" /> Fora <b>{pr.fora}%</b></span>
-          </div>
-          <div className="match-details">
-            <div><span>Gols esperados</span><strong>{jogo.previsao!.golsEsperadosCasa.toFixed(2)} <small>:</small> {jogo.previsao!.golsEsperadosFora.toFixed(2)}</strong></div>
-            <div><span>Rating Elo</span><strong>{Math.round(jogo.previsao!.eloMandante)} <small>:</small> {Math.round(jogo.previsao!.eloVisitante)}</strong></div>
-          </div>
-        </div>
-      ) : <div className="no-prediction">Dados insuficientes para calcular uma previsão confiável.</div>}
-      <p className="match-verdict">{veredito}</p>
-    </li>
-  )
+function LinhaJogo({ jogo }: { jogo: Jogo }) {
+  return <article className="game-row">
+    <div className="game-league"><span className="league-mini">{nomeCamp(jogo)}</span><small>{jogo.situacao === 'aoVivo' ? <i className="live-dot" /> : null}{jogo.situacao === 'aoVivo' ? 'AO VIVO' : dataHora.format(new Date(jogo.data))}</small></div>
+    <div className="game-team home"><strong>{jogo.mandante.nome}</strong><Escudo nome={jogo.mandante.nome} url={jogo.mandante.escudo} /></div>
+    <time className={jogo.situacao === 'aoVivo' ? 'game-time live' : 'game-time'}>{jogo.placar ? `${jogo.placar.casa} : ${jogo.placar.fora}` : hora.format(new Date(jogo.data))}</time>
+    <div className="game-team away"><Escudo nome={jogo.visitante.nome} url={jogo.visitante.escudo} /><strong>{jogo.visitante.nome}</strong></div>
+    <Probabilidades jogo={jogo} />
+  </article>
 }
 export default function App() {
   const [dados, setDados] = useState<Dados | null>(null)
@@ -103,76 +56,86 @@ export default function App() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState<'proximos' | 'resultados'>('proximos')
   const [campeonato, setCampeonato] = useState('todos')
+  const [busca, setBusca] = useState('')
+  const [secao, setSecao] = useState('Jogos')
   useEffect(() => {
-    fetch('./dados/jogos.json')
-      .then((resposta) => (resposta.ok ? resposta.json() as Promise<Dados> : Promise.reject(new Error('Falha ao carregar dados'))))
-      .then((conteudo) => { setDados(conteudo); setErro(false) })
-      .catch(() => setErro(true))
-      .finally(() => setCarregando(false))
+    fetch('./dados/jogos.json').then(r => r.ok ? r.json() as Promise<Dados> : Promise.reject(new Error('Falha ao carregar')))
+      .then(d => { setDados(d); setErro(false) }).catch(() => setErro(true)).finally(() => setCarregando(false))
   }, [])
 
-  const campeonatos = useMemo(() => {
-    const mapa = new Map<string, string>(CATALOGO_CAMPEONATOS)
-    dados?.jogos.forEach((jogo) => mapa.set(jogo.codigo, jogo.competicao))
-    return [...mapa]
-  }, [dados])
-  const jogosFiltrados = useMemo(() => (dados?.jogos ?? [])
-    .filter((jogo) => (aba === 'proximos' ? jogo.situacao !== 'encerrado' : jogo.situacao === 'encerrado'))
-    .filter((jogo) => campeonato === 'todos' || jogo.codigo === campeonato), [dados, aba, campeonato])
-  const grupos = useMemo(() => {
-    const lista = [...jogosFiltrados].sort((a, b) =>
-      aba === 'proximos' ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data))
-    const porCamp = new Map<string, Jogo[]>()
-    lista.forEach((jogo) => porCamp.set(jogo.competicao, [...(porCamp.get(jogo.competicao) ?? []), jogo]))
-    return [...porCamp]
-  }, [jogosFiltrados, aba])
+  const base = useMemo(() => (dados?.jogos ?? []).filter(semSerieB), [dados])
+  const jogosFiltrados = useMemo(() => base
+    .filter(j => aba === 'proximos' ? j.situacao !== 'encerrado' : j.situacao === 'encerrado')
+    .filter(j => campeonato === 'todos' || j.codigo === campeonato)
+    .filter(j => !busca || `${j.mandante.nome} ${j.visitante.nome} ${nomeCamp(j)}`.toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
+    .sort((a,b) => aba === 'proximos' ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data)), [base, aba, campeonato, busca])
+  const destaque = base.filter(j => j.situacao !== 'encerrado').sort((a,b) => a.data.localeCompare(b.data)).find(j => j.previsao) ?? jogosFiltrados.find(j => j.previsao) ?? null
+  const competicoes = useMemo(() => {
+    const map = new Map<string, string>()
+    base.forEach(j => map.set(j.codigo, nomeCamp(j)))
+    return [...map]
+  }, [base])
+  const aoVivo = base.filter(j => j.situacao === 'aoVivo').length
+  const comPrevisao = base.filter(j => j.previsao).length
+  const confianca = base.filter(j => j.previsao).length
+    ? Math.round(base.filter(j => j.previsao).reduce((s,j) => s + maiorProb(j), 0) / base.filter(j => j.previsao).length * 100)
+    : 0
+  const favoritos = [...base].filter(j => j.previsao).sort((a,b) => maiorProb(b)-maiorProb(a)).slice(0,3)
 
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="#partidas" aria-label="Quem leva? Jogos">
-          <BrandMark />
-          <span className="brand-copy"><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></span>
-        </a>
-        <nav className="top-nav" aria-label="Navegação principal">
-          <a className="active" href="#partidas">Partidas</a>
-          <a href="#sobre">Sobre</a>
-        </nav>
-        <div className="top-status"><span /> JOGOS E PROBABILIDADES</div>
-      </header>
+  return <div className="app-shell">
+    <aside className="sidebar">
+      <a className="side-brand" href="#inicio" aria-label="Soccer Championship - início"><Marca /></a>
+      <nav className="side-nav" aria-label="Navegação principal">
+        <a className={secao === 'Jogos' ? 'selected' : ''} href="#jogos" onClick={() => setSecao('Jogos')}><span>⌂</span>Jogos</a>
+        <a className={secao === 'Competições' ? 'selected' : ''} href="#competicoes" onClick={() => setSecao('Competições')}><span>🏆</span>Competições</a>
+        <a className={secao === 'Estatísticas' ? 'selected' : ''} href="#estatisticas" onClick={() => setSecao('Estatísticas')}><span>▥</span>Estatísticas</a>
+        <a className={secao === 'Sobre' ? 'selected' : ''} href="#sobre" onClick={() => setSecao('Sobre')}><span>●</span>Sobre</a>
+      </nav>
+      <div className="sidebar-promo"><div className="promo-chart">↗</div><strong>Análises precisas,<br/>decisões mais<br/>inteligentes.</strong><a href="#sobre">Quem Leva?</a></div>
+      <span className="side-foot">FOOTBALL INTELLIGENCE</span>
+    </aside>
 
-      <main className="dashboard" id="inicio">
-        <section className="matches-section" id="partidas">
-          <div className="matches-heading">
-            <div><span className="section-kicker-text">FUTEBOL · AO VIVO E PRÓXIMOS</span><h2>Jogos<span>.</span></h2><p>Partidas, placares e probabilidades em um só lugar.</p></div>
-            <div className="match-count"><strong>{jogosFiltrados.length}</strong><span>PARTIDAS</span></div>
+    <main className="main-area" id="inicio">
+      <div className="topline">
+        <label className="search-box"><span>⌕</span><input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar times, campeonatos..." aria-label="Buscar times e campeonatos" /></label>
+        <span className="top-date">ANÁLISE ESTATÍSTICA · SEM APOSTAS</span>
+      </div>
+
+      <section className="featured-match" aria-label="Partida em destaque">
+        {destaque ? <>
+          <div className="featured-league"><span className="flag">⚽</span>{nomeCamp(destaque)} <span>›</span></div>
+          <div className="featured-contest">
+            <div className="featured-team"><Escudo nome={destaque.mandante.nome} url={destaque.mandante.escudo} grande/><strong>{destaque.mandante.nome}</strong></div>
+            <div className="featured-clock"><strong>{destaque.placar ? `${destaque.placar.casa} : ${destaque.placar.fora}` : hora.format(new Date(destaque.data))}</strong><span>{destaque.situacao === 'aoVivo' ? 'AO VIVO' : dataHora.format(new Date(destaque.data))}</span></div>
+            <div className="featured-team"><Escudo nome={destaque.visitante.nome} url={destaque.visitante.escudo} grande/><strong>{destaque.visitante.nome}</strong></div>
           </div>
-          <div className="filters">
-            <div className="tabs" role="tablist" aria-label="Tipo de partida">
-              <button role="tab" aria-selected={aba === 'proximos'} onClick={() => setAba('proximos')}>Próximos jogos</button>
-              <button role="tab" aria-selected={aba === 'resultados'} onClick={() => setAba('resultados')}>Resultados</button>
-            </div>
-            <label className="select-wrap"><span>COMPETIÇÃO</span><select value={campeonato} onChange={(e) => setCampeonato(e.target.value)} aria-label="Filtrar campeonato">
-              <option value="todos">Todos os campeonatos</option>
-              {campeonatos.map(([codigo, nome]) => <option key={codigo} value={codigo}>{nome}</option>)}
-            </select></label>
+          <div className="featured-prob"><h3>Probabilidades</h3><div><b>{prob(destaque)?.casa ?? '—'}%</b><span>{destaque.mandante.nome}</span></div><div><b>{prob(destaque)?.empate ?? '—'}%</b><span>Empate</span></div><div><b>{prob(destaque)?.fora ?? '—'}%</b><span>{destaque.visitante.nome}</span></div></div>
+        </> : <div className="featured-empty"><strong>Futebol em análise</strong><span>Assim que houver partidas disponíveis, o próximo confronto aparecerá aqui.</span></div>}
+      </section>
+
+      <div className="content-grid">
+        <div className="center-column">
+          <div className="league-chips" aria-label="Filtros de competições">
+            <button className={campeonato === 'todos' ? 'active' : ''} onClick={() => setCampeonato('todos')}>▦ <span>Todos</span></button>
+            {competicoes.slice(0,4).map(([code,name]) => <button key={code} className={campeonato === code ? 'active' : ''} onClick={() => setCampeonato(code)}>{name}</button>)}
           </div>
-          {carregando && <p className="notice">Carregando partidas e previsões…</p>}
-          {erro && <p className="notice error-notice">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
-          {!carregando && !erro && grupos.length === 0 && <p className="notice">{campeonato === 'BSB' ? <>Série B está no catálogo, mas o football-data.org classifica essa competição no plano TIER_THREE. Se a chave não tiver esse nível, os jogos não são liberados. Enquanto isso, consulte a <a href="https://www.cbf.com.br/futebol-brasileiro/tabelas/campeonato-brasileiro/serie-b/2026" target="_blank" rel="noreferrer">tabela oficial da CBF</a>.</> : 'Nenhuma partida encontrada para este filtro.'}</p>}
-          {grupos.map(([titulo, jogos]) => (
-            <section className="competition-section" key={titulo}>
-              <div className="competition-heading"><div className="competition-title"><img src={logoCampeonato(jogos[0]?.codigo ?? '')} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} /><h3>{titulo}</h3></div><span>{jogos.length.toString().padStart(2, '0')} JOGOS</span></div>
-              <ul className="match-list">{jogos.map((jogo) => <Cartao key={jogo.id} jogo={jogo} />)}</ul>
-            </section>
-          ))}
-        </section>
-      </main>
-      <footer className="site-footer" id="sobre">
-        <div className="footer-brand"><BrandMark /><div><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></div></div>
-        <p>Modelo híbrido Elo + Poisson: Elo estima a força relativa dos clubes e Poisson converte o desempenho em probabilidades de gols. Gols esperados são estimativas do modelo, não xG oficial.</p>
-        <div className="footer-bottom"><span>ANÁLISE ESTATÍSTICA · SEM APOSTAS</span>{dados && <span>DADOS ATUALIZADOS EM {fmtAtualizacao.format(new Date(dados.atualizadoEm))}</span>}<span>FEITO PARA ENTENDER O JOGO.</span></div>
-      </footer>
-    </div>
-  )
+          <section className="games-panel" id="jogos">
+            <header className="panel-title"><h2>▦ <span>{aba === 'proximos' ? 'Jogos' : 'Resultados'} {aba === 'proximos' ? 'de Hoje' : 'Recentes'}</span></h2><div className="panel-tabs"><button className={aba === 'proximos' ? 'on' : ''} onClick={() => setAba('proximos')}>Próximos</button><button className={aba === 'resultados' ? 'on' : ''} onClick={() => setAba('resultados')}>Resultados</button></div></header>
+            {carregando && <p className="notice">Carregando partidas e previsões…</p>}
+            {erro && <p className="notice error">Não foi possível carregar os dados. Tente novamente mais tarde.</p>}
+            {!carregando && !erro && jogosFiltrados.length === 0 && <p className="notice">Nenhuma partida encontrada para esse filtro.</p>}
+            <div className="games-list">{jogosFiltrados.slice(0,12).map(j => <LinhaJogo key={j.id} jogo={j}/>)}</div>
+            {jogosFiltrados.length > 12 && <button className="see-more" onClick={() => setCampeonato('todos')}>Exibindo 12 de {jogosFiltrados.length} partidas</button>}
+          </section>
+          <section className="featured-leagues" id="competicoes"><header className="panel-title"><h2>🏆 <span>Campeonatos em Destaque</span></h2><span className="muted-small">{competicoes.length} competições</span></header><div className="league-tiles">{competicoes.slice(0,4).map(([code,name]) => <button key={code} onClick={() => setCampeonato(code)}><img src={escudoCamp(code) ?? ''} alt="" onError={e => { e.currentTarget.style.visibility='hidden' }}/><span>{name}</span></button>)}</div></section>
+        </div>
+        <aside className="right-column">
+          <section className="side-panel"><header className="side-panel-head"><h2>Competições</h2><a href="#competicoes">Ver todas →</a></header><div className="competition-links">{competicoes.slice(0,8).map(([code,name]) => <button key={code} onClick={() => setCampeonato(code)}><img src={escudoCamp(code) ?? ''} alt="" onError={e => { e.currentTarget.style.visibility='hidden' }}/><span>{name}</span><b>›</b></button>)}</div></section>
+          <section className="side-panel model-panel" id="estatisticas"><h2>▥ &nbsp;Números do Modelo</h2><div className="model-number">{comPrevisao}<small> previsões calculadas</small></div><div className="model-stat"><strong>{confianca}%</strong><span>probabilidade média do resultado mais provável</span></div><div className="model-foot"><span className="green">{aoVivo} ao vivo</span><span>{base.length} partidas no conjunto</span></div></section>
+          <section className="side-panel favorites-panel"><h2>⭐ Favoritos do modelo</h2>{favoritos.length ? favoritos.map(j => <div className="favorite-row" key={j.id}><span>{j.mandante.nome} x {j.visitante.nome}</span><b>{Math.round(maiorProb(j)*100)}%</b></div>) : <p className="muted-small">As previsões aparecerão quando houver dados suficientes.</p>}</section>
+        </aside>
+      </div>
+      <footer className="site-footer" id="sobre"><Marca/><p>Probabilidades calculadas pelo modelo estatístico Elo + Poisson. Gols esperados são estimativas do modelo, não xG oficial. Este projeto é informativo e não é uma plataforma de apostas.</p>{dados && <small>Atualizado em {dataHora.format(new Date(dados.atualizadoEm))}</small>}</footer>
+    </main>
+  </div>
 }
