@@ -164,7 +164,7 @@ export default function App() {
           <div className="hero-art" aria-hidden="true">
             <div className="orbit orbit-one" /><div className="orbit orbit-two" />
             <div className="hero-ball">⚽</div>
-            <div className="hero-chip chip-top"><span>MODEL</span><strong>EL0 + POISSON</strong></div>
+            <div className="hero-chip chip-top"><span>MODEL</span><strong>ELO + POISSON</strong></div>
             <div className="hero-chip chip-bottom"><span>DATA DRIVEN</span><strong>NO BETTING. JUST DATA.</strong></div>
           </div>
           <div className="hero-foot"><span>01 / 03</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SCROLL TO EXPLORE ↓</span></div>
