@@ -51,6 +51,9 @@ function Selo({ time }: { time: Jogo['mandante'] }) {
     </span>
   )
 }
+function BrandMark() {
+  return <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M7 11.5 20 5l13 6.5v17L20 35 7 28.5v-17Z" stroke="currentColor" strokeWidth="1.7"/><path d="M7.5 12 20 18.5 32.5 12M20 18.5V34M13 8.5l13.5 7M27 8.5l-13.5 7" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/><path d="m13 26 4.2-4 3.2 2.3 6.4-6" stroke="#07120D" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="26.8" cy="18.3" r="2.2" fill="#07120D"/></svg></span>
+}
 function Cartao({ jogo }: { jogo: Jogo }) {
   const quando = fmtJogo.format(new Date(jogo.data))
   const real = resultadoReal(jogo)
@@ -137,12 +140,13 @@ export default function App() {
   }, [jogosFiltrados, aba])
   const comPrevisao = jogosFiltrados.filter((jogo) => jogo.previsao).length
   const partidasAoVivo = jogosFiltrados.filter((jogo) => jogo.situacao === 'aoVivo').length
+  const destaque = jogosFiltrados.find((jogo) => jogo.previsao) ?? jogosFiltrados[0]
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#inicio" aria-label="Quem leva? Início">
-          <span className="brand-mark">QL<span>·</span></span>
+          <BrandMark />
           <span className="brand-copy"><strong>QUEM LEVA?</strong><small>FOOTBALL INTELLIGENCE</small></span>
         </a>
         <nav className="top-nav" aria-label="Navegação principal">
@@ -156,18 +160,34 @@ export default function App() {
       <main className="dashboard" id="inicio">
         <section className="hero">
           <div className="hero-copy">
-            <span className="eyebrow"><i /> CENTRAL DE INTELIGÊNCIA ESPORTIVA</span>
-            <h1>O jogo vai além<br />do <em>palpite.</em></h1>
-            <p>Dados, contexto e modelos estatísticos para entender as probabilidades por trás de cada partida.</p>
-            <a className="hero-link" href="#partidas">Explorar partidas <span>↗</span></a>
+            <span className="eyebrow"><i /> INTELIGÊNCIA ESPORTIVA</span>
+            <h1>O futebol,<br /><em>além do placar.</em></h1>
+            <p>Probabilidades, desempenho e contexto para ler cada partida com mais profundidade.</p>
+            <a className="hero-link" href="#partidas">Ver partidas <span>↗</span></a>
           </div>
-          <div className="hero-art" aria-hidden="true">
-            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
-            <div className="hero-ball">⚽</div>
-            <div className="hero-chip chip-top"><span>MODEL</span><strong>ELO + POISSON</strong></div>
-            <div className="hero-chip chip-bottom"><span>DATA DRIVEN</span><strong>NO BETTING. JUST DATA.</strong></div>
+          <div className="hero-feature">
+            <div className="feature-topline"><span>JOGO EM FOCO</span><span className="feature-live"><i /> MODELO ATIVO</span></div>
+            {destaque ? (
+              <>
+                <div className="feature-league">{destaque.competicao}</div>
+                <div className="feature-teams">
+                  <div className="feature-team"><Selo time={destaque.mandante} /></div>
+                  <div className="feature-vs">{destaque.placar ? destaque.placar.casa + ' : ' + destaque.placar.fora : 'VS'}</div>
+                  <div className="feature-team"><Selo time={destaque.visitante} /></div>
+                </div>
+                <div className="feature-date">{fmtJogo.format(new Date(destaque.data))}</div>
+                {destaque.previsao ? (
+                  <div className="feature-probabilities">
+                    <div className="feature-prob-head"><span>PROBABILIDADE DE RESULTADO</span><span>MODELO ELO + POISSON</span></div>
+                    <div className="feature-prob-bar"><i style={{flexGrow:percentuais(destaque).casa}}/><i style={{flexGrow:percentuais(destaque).empate}}/><i style={{flexGrow:percentuais(destaque).fora}}/></div>
+                    <div className="feature-prob-values"><span>CASA <b>{percentuais(destaque).casa}%</b></span><span>EMPATE <b>{percentuais(destaque).empate}%</b></span><span>FORA <b>{percentuais(destaque).fora}%</b></span></div>
+                  </div>
+                ) : <div className="feature-no-data">Histórico insuficiente para calcular probabilidades.</div>}
+              </>
+            ) : <div className="feature-empty">As próximas partidas aparecerão aqui quando os dados forem atualizados.</div>}
+            <a className="feature-open" href="#partidas">Explorar central de partidas <span>→</span></a>
           </div>
-          <div className="hero-foot"><span>01 / 03</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SCROLL TO EXPLORE ↓</span></div>
+          <div className="hero-foot"><span>01 / MATCH CENTER</span><span>ESTATÍSTICA APLICADA AO FUTEBOL</span><span>SEM APOSTAS · SÓ DADOS</span></div>
         </section>
 
         <section className="overview" aria-label="Resumo das partidas">
