@@ -10,6 +10,7 @@ if (!TOKEN) {
 const PASTA = process.argv[2] ?? 'public/dados'
 const COMPETICOES: [string, string][] = [
   ['BSA', 'Brasileirão Série A'],
+  ['BSB', 'Brasileirão Série B'],
   ['CLI', 'Copa Libertadores'],
   ['CL', 'Champions League'],
   ['PL', 'Premier League'],
