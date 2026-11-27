@@ -60,8 +60,28 @@ export default function App() {
   const [secao, setSecao] = useState('Jogos')
   const [mostrarTodos, setMostrarTodos] = useState(false)
   useEffect(() => {
-    fetch('./dados/jogos.json').then(r => r.ok ? r.json() as Promise<Dados> : Promise.reject(new Error('Falha ao carregar')))
-      .then(d => { setDados(d); setErro(false) }).catch(() => setErro(true)).finally(() => setCarregando(false))
+    let ativo = true
+    const carregar = async (inicial = false) => {
+      try {
+        const resposta = await fetch(`./dados/jogos.json?t=${Date.now()}`, { cache: 'no-store' })
+        if (!resposta.ok) throw new Error('Falha ao carregar')
+        const novosDados = await resposta.json() as Dados
+        if (ativo) {
+          setDados(novosDados)
+          setErro(false)
+        }
+      } catch {
+        if (ativo && inicial) setErro(true)
+      } finally {
+        if (ativo && inicial) setCarregando(false)
+      }
+    }
+    void carregar(true)
+    const intervalo = window.setInterval(() => { void carregar() }, 60_000)
+    return () => {
+      ativo = false
+      window.clearInterval(intervalo)
+    }
   }, [])
 
   const base = useMemo(() => (dados?.jogos ?? []).filter(semSerieB), [dados])
