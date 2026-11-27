@@ -38,3 +38,28 @@
 .site-footer{background:#171a1d;border-color:#30363b}
 @media(max-width:760px){.match-list{grid-template-columns:1fr}}
 @media(max-width:520px){.matches-section{padding:27px 0 45px}.matches-heading{gap:12px}.matches-heading h2{font-size:28px}}
+
+
+/* Cards compactos e identidade visual das competições */
+.match-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.match-card{padding:12px;border-radius:8px}
+.match-meta{font-size:8px}
+.match-teams{gap:6px;margin:13px 0 11px}
+.time{gap:7px}
+.time img{width:25px;height:25px}
+.time .nome{font-size:10px}
+.escudo-vazio{width:24px;height:24px}
+.match-score{font-size:15px}
+.prediction{padding-top:10px}
+.prediction-bar{height:5px}
+.prediction-values{margin-top:7px;font-size:8px}
+.prediction-values b{font-size:9px}
+.match-details{margin-top:10px;padding-top:8px}
+.match-details strong{font-size:11px}
+.match-verdict{margin-top:9px;padding-top:8px;font-size:9px}
+.competition-heading{margin-bottom:10px}
+.competition-title{display:flex;align-items:center;gap:10px;min-width:0}
+.competition-title img{width:27px;height:27px;object-fit:contain;flex:none}
+.competition-title h3{margin:0;font:700 14px Manrope}
+@media(max-width:1050px){.match-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.match-list{grid-template-columns:1fr}.match-card{padding:13px}.competition-title img{width:25px;height:25px}}
