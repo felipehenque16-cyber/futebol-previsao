@@ -63,3 +63,9 @@
 .competition-title h3{margin:0;font:700 14px Manrope}
 @media(max-width:1050px){.match-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.match-list{grid-template-columns:1fr}.match-card{padding:13px}.competition-title img{width:25px;height:25px}}
+
+
+/* Identidade visual da marca */
+.brand-logo{display:block;width:58px;height:58px;flex:none;object-fit:contain;border-radius:9px;background:#29466b}
+.footer-brand .brand-logo{width:48px;height:48px}
+@media(max-width:520px){.brand-logo{width:48px;height:48px}.footer-brand .brand-logo{width:42px;height:42px}}

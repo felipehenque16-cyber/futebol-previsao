@@ -10,7 +10,7 @@
   "theme_color": "#101214",
   "icons": [
     {
-      "src": "app-icon.svg",
+      "src": "logo-quem-leva.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

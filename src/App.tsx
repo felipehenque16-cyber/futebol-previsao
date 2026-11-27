@@ -49,7 +49,7 @@ function Selo({ time }: { time: Jogo['mandante'] }) {
   )
 }
 function BrandMark() {
-  return <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M7 11.5 20 5l13 6.5v17L20 35 7 28.5v-17Z" stroke="currentColor" strokeWidth="1.7"/><path d="M7.5 12 20 18.5 32.5 12M20 18.5V34M13 8.5l13.5 7M27 8.5l-13.5 7" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round"/><path d="m13 26 4.2-4 3.2 2.3 6.4-6" stroke="#07120D" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="26.8" cy="18.3" r="2.2" fill="#07120D"/></svg></span>
+  return <img className="brand-logo" src="./logo-quem-leva.svg" alt="" aria-hidden="true" />
 }
 function Cartao({ jogo }: { jogo: Jogo }) {
   const quando = fmtJogo.format(new Date(jogo.data))
