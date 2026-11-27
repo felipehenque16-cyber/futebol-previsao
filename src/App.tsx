@@ -159,7 +159,7 @@ export default function App() {
           </div>
           {carregando && <p className="notice">Carregando partidas e previsões…</p>}
           {erro && <p className="notice error-notice">Não foi possível carregar os dados. Tente novamente mais tarde ou gere o arquivo public/dados/jogos.json.</p>}
-          {!carregando && !erro && grupos.length === 0 && <p className="notice">{campeonato === 'BSB' ? 'Série B já está cadastrada no app, mas a fonte de dados atual classifica o calendário da competição no plano TIER_THREE. Por isso, esta chave pode não ter acesso aos jogos. A tabela oficial está disponível no site da CBF.' : 'Nenhuma partida encontrada para este filtro.'}</p>}
+          {!carregando && !erro && grupos.length === 0 && <p className="notice">{campeonato === 'BSB' ? <>Série B está no catálogo, mas o football-data.org classifica essa competição no plano TIER_THREE. Se a chave não tiver esse nível, os jogos não são liberados. Enquanto isso, consulte a <a href="https://www.cbf.com.br/futebol-brasileiro/tabelas/campeonato-brasileiro/serie-b/2026" target="_blank" rel="noreferrer">tabela oficial da CBF</a>.</> : 'Nenhuma partida encontrada para este filtro.'}</p>}
           {grupos.map(([titulo, jogos]) => (
             <section className="competition-section" key={titulo}>
               <div className="competition-heading"><div className="competition-title"><img src={logoCampeonato(jogos[0]?.codigo ?? '')} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} /><h3>{titulo}</h3></div><span>{jogos.length.toString().padStart(2, '0')} JOGOS</span></div>
