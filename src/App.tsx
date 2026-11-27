@@ -26,7 +26,7 @@ const prob = (j: Jogo) => {
   return { casa, fora, empate: Math.max(0, 100 - casa - fora) }
 }
 const maiorProb = (j: Jogo) => j.previsao ? Math.max(j.previsao.casa, j.previsao.empate, j.previsao.fora) : 0
-const semSerieB = (j: Jogo) => j.codigo !== 'BSB' && !/série\\s*b/i.test(j.competicao)
+const semSerieB = (j: Jogo) => j.codigo !== 'BSB' && !/série\s*b/i.test(j.competicao)
 
 function Escudo({ nome, url, grande = false }: { nome: string; url: string | null; grande?: boolean }) {
   return url
@@ -58,6 +58,7 @@ export default function App() {
   const [campeonato, setCampeonato] = useState('todos')
   const [busca, setBusca] = useState('')
   const [secao, setSecao] = useState('Jogos')
+  const [mostrarTodos, setMostrarTodos] = useState(false)
   useEffect(() => {
     fetch('./dados/jogos.json').then(r => r.ok ? r.json() as Promise<Dados> : Promise.reject(new Error('Falha ao carregar')))
       .then(d => { setDados(d); setErro(false) }).catch(() => setErro(true)).finally(() => setCarregando(false))
@@ -124,8 +125,8 @@ export default function App() {
             {carregando && <p className="notice">Carregando partidas e previsões…</p>}
             {erro && <p className="notice error">Não foi possível carregar os dados. Tente novamente mais tarde.</p>}
             {!carregando && !erro && jogosFiltrados.length === 0 && <p className="notice">Nenhuma partida encontrada para esse filtro.</p>}
-            <div className="games-list">{jogosFiltrados.slice(0,12).map(j => <LinhaJogo key={j.id} jogo={j}/>)}</div>
-            {jogosFiltrados.length > 12 && <button className="see-more" onClick={() => setCampeonato('todos')}>Exibindo 12 de {jogosFiltrados.length} partidas</button>}
+            <div className="games-list">{jogosFiltrados.slice(0, mostrarTodos ? undefined : 12).map(j => <LinhaJogo key={j.id} jogo={j}/>)}</div>
+            {jogosFiltrados.length > 12 && <button className="see-more" onClick={() => setMostrarTodos(v => !v)}>{mostrarTodos ? 'Mostrar menos' : `Ver todas as ${jogosFiltrados.length} partidas`}</button>}
           </section>
           <section className="featured-leagues" id="competicoes"><header className="panel-title"><h2>🏆 <span>Campeonatos em Destaque</span></h2><span className="muted-small">{competicoes.length} competições</span></header><div className="league-tiles">{competicoes.slice(0,4).map(([code,name]) => <button key={code} onClick={() => setCampeonato(code)}><img src={escudoCamp(code) ?? ''} alt="" onError={e => { e.currentTarget.style.visibility='hidden' }}/><span>{name}</span></button>)}</div></section>
         </div>
