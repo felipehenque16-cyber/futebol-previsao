@@ -11,23 +11,6 @@ const fmtAtualizacao = new Intl.DateTimeFormat('pt-BR', {
 })
 const MARGEM_FAVORITO = 0.06
 type Lado = 'casa' | 'empate' | 'fora'
-interface MetricasBacktest {
-  partidasTestadas: number
-  acuracia: number
-  acuraciaBaseline: number
-  brierScore: number
-  logLoss: number
-  acertos: number
-  acertosBaseline: number
-}
-interface RelatorioBacktest {
-  geradoEm: string
-  partidasNoHistorico: number
-  metricas: MetricasBacktest
-  porCompeticao: Record<string, MetricasBacktest>
-  observacao: string
-}
-
 function percentuais(jogo: Jogo) {
   const previsao = jogo.previsao!
   const casa = Math.round(previsao.casa * 100)
@@ -106,15 +89,6 @@ export default function App() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState<'proximos' | 'resultados'>('proximos')
   const [campeonato, setCampeonato] = useState('todos')
-  const [backtest, setBacktest] = useState<RelatorioBacktest | null>(null)
-
-  useEffect(() => {
-    fetch('./dados/backtest.json')
-      .then((resposta) => resposta.ok ? resposta.json() as Promise<RelatorioBacktest> : null)
-      .then((relatorio) => { if (relatorio?.metricas) setBacktest(relatorio) })
-      .catch(() => {})
-  }, [])
-
   useEffect(() => {
     fetch('./dados/jogos.json')
       .then((resposta) => (resposta.ok ? resposta.json() as Promise<Dados> : Promise.reject(new Error('Falha ao carregar dados'))))
@@ -138,8 +112,6 @@ export default function App() {
     lista.forEach((jogo) => porCamp.set(jogo.competicao, [...(porCamp.get(jogo.competicao) ?? []), jogo]))
     return [...porCamp]
   }, [jogosFiltrados, aba])
-  const comPrevisao = jogosFiltrados.filter((jogo) => jogo.previsao).length
-  const partidasAoVivo = jogosFiltrados.filter((jogo) => jogo.situacao === 'aoVivo').length
 
   return (
     <div className="app-shell">
